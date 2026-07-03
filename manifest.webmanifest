@@ -1,0 +1,12 @@
+{
+  "name": "Hunch — make the call",
+  "short_name": "Hunch",
+  "description": "Stock picking with confidence. Virtual capital, real prices, your thesis.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#14121B",
+  "theme_color": "#14121B",
+  "icons": [
+    {"src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%2314121B'/%3E%3Ctext x='96' y='128' font-family='Georgia,serif' font-style='italic' font-size='110' fill='%23D6B172' text-anchor='middle'%3Eh%3C/text%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any"}
+  ]
+}

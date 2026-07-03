@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hunch — make the call</title>
+<meta name="description" content="Stock picking with confidence. Virtual capital, real prices, your thesis.">
+<meta name="theme-color" content="#14121B">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,560;0,9..144,640;1,9..144,420;1,9..144,540&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14121B;        /* deep plum-ink base */
+  --card:#1E1B27;
+  --card2:#262231;
+  --line:#332D42;
+  --line-soft:#292437;
+  --text:#EFEBF5;
+  --muted:#9C94B0;
+  --faint:#6E6683;
+  --brass:#D6B172;      /* accent: CTAs, goal fill, quality tier */
+  --brass-dim:#8a744e;
+  --peri:#918FF2;       /* momentum / speculative tier */
+  --up:#7FCBA4;
+  --down:#E0715F;
+  --shadow:0 12px 32px rgba(0,0,0,.35);
+  --r:16px;
+  --font-ui:'Archivo',system-ui,sans-serif;
+  --font-display:'Fraunces',Georgia,serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--ink);color:var(--text);
+  font-family:var(--font-ui);font-size:15px;line-height:1.5;
+  min-height:100dvh;
+}
+#app{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;position:relative}
+.view{flex:1;padding:20px 20px 96px;animation:fadein .28s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+h1,h2,.display{font-family:var(--font-display);font-weight:560;letter-spacing:-.01em}
+.script{font-family:var(--font-display);font-style:italic;font-weight:540}
+.mono{font-family:var(--font-mono)}
+button{font-family:var(--font-ui);cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:6px}
+input,textarea{font-family:var(--font-ui);color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;width:100%}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+
+/* ---------- shared bits ---------- */
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.tier{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:99px;border:1px solid}
+.tier.quality{color:var(--brass);border-color:rgba(214,177,114,.4)}
+.tier.momentum{color:var(--peri);border-color:rgba(145,143,242,.4)}
+.tier .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.btn{display:block;width:100%;text-align:center;padding:15px;border-radius:14px;font-weight:600;font-size:15px;transition:transform .12s ease,opacity .12s ease}
+.btn:active{transform:scale(.985)}
+.btn-primary{background:var(--brass);color:#231C0E}
+.btn-primary:disabled{opacity:.35;cursor:default}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.btn-quiet{color:var(--muted);font-weight:500;padding:12px}
+.chip{padding:8px 14px;border-radius:99px;border:1px solid var(--line);color:var(--muted);font-size:13.5px;font-weight:500;transition:all .12s}
+.chip.on{border-color:var(--brass);color:var(--brass);background:rgba(214,177,114,.08)}
+.card{background:var(--card);border:1px solid var(--line-soft);border-radius:var(--r);padding:18px}
+.hr{height:1px;background:var(--line-soft);margin:16px 0;border:none}
+.row{display:flex;align-items:center;gap:10px}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.up{color:var(--up)} .down{color:var(--down)}
+.small{font-size:12.5px;color:var(--muted)}
+.tiny{font-size:11.5px;color:var(--faint)}
+
+/* bilingual stat pair — equal weight, always on */
+.pair{display:flex;flex-direction:column;gap:1px}
+.pair .term{font-size:12px;color:var(--text);font-weight:600}
+.pair .plain{font-size:12px;color:var(--muted);font-weight:400}
+
+/* ---------- pulses (signature glyphs) ---------- */
+.rangebar{position:relative;height:4px;border-radius:2px;background:var(--line);width:100%}
+.rangebar .pin{position:absolute;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:var(--brass);box-shadow:0 0 0 3px rgba(214,177,114,.18)}
+.arc{display:inline-block;vertical-align:middle}
+.sline{display:block}
+
+/* ---------- top bar & nav ---------- */
+.topbar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px}
+.brand{font-family:var(--font-display);font-style:italic;font-weight:540;font-size:21px;color:var(--text)}
+.brand em{font-style:italic;color:var(--brass)}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;background:rgba(20,18,27,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line-soft);padding:6px 8px calc(10px + env(safe-area-inset-bottom));z-index:40}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;color:var(--faint);font-size:11px;font-weight:600;letter-spacing:.04em}
+.nav button.on{color:var(--brass)}
+.nav svg{width:21px;height:21px}
+
+/* ---------- goal meter (fillable vessel) ---------- */
+.vessel{position:relative;height:14px;border-radius:99px;background:var(--card2);border:1px solid var(--line);overflow:hidden}
+.vessel .fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,var(--brass-dim),var(--brass));border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.vessel .ghost{position:absolute;inset:0;width:0%;background:rgba(214,177,114,.22);border-radius:99px}
+.vessel .tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);opacity:.5}
+
+/* ---------- discover feed ---------- */
+.coll{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line-soft);border-radius:var(--r);padding:20px;margin-bottom:14px;transition:border-color .15s}
+.coll:active{border-color:var(--brass-dim)}
+.coll h2{font-size:23px;line-height:1.2;margin:8px 0 6px;font-style:italic;font-weight:540}
+.coll p{color:var(--muted);font-size:14px}
+.coll .meta{margin-top:12px;display:flex;justify-content:space-between;align-items:center}
+
+/* ---------- card stack ---------- */
+.stack{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;padding:4px 20px 20px;margin:0 -20px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.stack::-webkit-scrollbar{display:none}
+.scard{scroll-snap-align:center;flex:0 0 calc(100% - 48px);background:var(--card);border:1px solid var(--line-soft);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+.pulse{padding:13px 0;border-top:1px solid var(--line-soft)}
+.pulse:first-of-type{border-top:none}
+.pulse .plabel{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:8px}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.voice{font-family:var(--font-display);font-style:italic;font-size:15px;color:var(--text);margin-top:10px;line-height:1.45}
+.dots{display:flex;justify-content:center;gap:6px;margin-top:2px}
+.dots i{width:5px;height:5px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--brass)}
+
+/* case file */
+.case{margin-top:12px;border:1px dashed var(--line);border-radius:12px;padding:14px;display:none}
+.case.open{display:block}
+.case .kv{margin-bottom:10px}
+.case .kv:last-child{margin-bottom:0}
+.case .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:2px}
+.case .v{font-size:13.5px;color:var(--muted)}
+
+/* ---------- sheets / overlays ---------- */
+.sheet-veil{position:fixed;inset:0;background:rgba(10,8,16,.6);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:480px;background:var(--card);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:none;padding:22px 20px calc(24px + env(safe-area-inset-bottom));max-height:88dvh;overflow-y:auto;animation:slideup .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes slideup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+
+/* ---------- thesis note (signature artifact) ---------- */
+.note{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:18px;position:relative}
+.note::before{content:'❝';position:absolute;top:8px;left:14px;font-family:var(--font-display);font-size:26px;color:var(--brass);opacity:.7}
+.note .qt{font-family:var(--font-display);font-style:italic;font-size:16.5px;line-height:1.55;padding-left:22px}
+.note .sig{margin-top:12px;padding-left:22px;font-size:12px;color:var(--faint)}
+.note .qt b{color:var(--brass);font-weight:560}
+
+/* verdict */
+.verdict-stamp{display:inline-block;font-family:var(--font-display);font-style:italic;font-weight:560;font-size:26px;padding:6px 18px;border:2px solid;border-radius:12px;transform:rotate(-2deg)}
+.v-called{color:var(--up);border-color:var(--up)}
+.v-partial{color:var(--brass);border-color:var(--brass)}
+.v-missed{color:var(--down);border-color:var(--down)}
+
+/* compare table */
+.cmp{width:100%;border-collapse:collapse;font-size:13px}
+.cmp th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--line)}
+.cmp td{padding:10px 6px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+
+/* positions */
+.pos{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line-soft);border-radius:var(--r);padding:16px;margin-bottom:12px}
+
+/* toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:92px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 18px;font-size:13.5px;z-index:60;box-shadow:var(--shadow);animation:fadein .25s ease}
+
+/* nudge banner */
+.nudge{position:sticky;bottom:84px;margin:14px 0 0;background:linear-gradient(120deg,#2A2438,#241F31);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+.nudge p{font-size:13.5px;flex:1}
+.nudge button{color:var(--brass);font-weight:600;white-space:nowrap;font-size:13.5px}
+
+.demo-pill{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--faint);border:1px dashed var(--line);border-radius:99px;padding:5px 12px}
+.demo-pill button{color:var(--brass);font-weight:600;font-size:11.5px}
+</style>
+</head>
+<body>
+<div id="app" role="application"></div>
+<script>
+/* ============================================================
+   HUNCH — v1 build (virtual capital, real-market demo prices)
+   PRICE FEED ADAPTER: replace PriceFeed.advance()/PriceFeed.get()
+   with a live NSE quote source. Everything downstream is agnostic.
+   ============================================================ */
+/* ---------------- storage: artifact runtime → localStorage → memory ---------------- */
+const Store = (() => {
+  const KEY = 'hunch-state-v1';
+  let mem = null;
+  async function load(){
+    try{ if(window.storage){ const r = await window.storage.get(KEY); if(r&&r.value) return JSON.parse(r.value);} }catch(e){}
+    try{ const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){}
+    return mem;
+  }
+  async function save(s){
+    mem = s;
+    try{ if(window.storage){ await window.storage.set(KEY, JSON.stringify(s)); return; } }catch(e){}
+    try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){}
+  }
+  return {load, save};
+})();
+
+/* ---------------- data: collections + stocks (DEMO DATA) ----------------
+   Stats are plausible but static seed values, not live figures. */
+const COLLECTIONS = [
+  {id:'quiet', name:'The Quiet Overachievers', tier:'quality',
+   line:'No headlines, no drama — just profits that keep showing up every quarter.'},
+  {id:'glowup', name:'Stocks With a Glow-Up', tier:'momentum',
+   line:'Written off two years ago. Look at them now. Turnarounds mid-arc.'},
+  {id:'oldmoney', name:'Old Money, New Tricks', tier:'quality',
+   line:'Legacy names quietly rewiring themselves for the next decade.'},
+  {id:'defence', name:'The Defence Brief', tier:'momentum',
+   line:'Order books are full and the government is the customer. High heat, real cyclicality.'},
+  {id:'buying', name:"Everyone's Buying Something", tier:'quality',
+   line:'India is shopping — these are the counters ringing up the bill.'},
+  {id:'wiring', name:'The Ones Doing the Wiring', tier:'quality',
+   line:'Every factory, data centre and grid upgrade runs through somebody. These are the somebodies.'}
+];
+
+/* fields: sym, name, coll, price, pg (profit growth % yoy), debt (low/ok/heavy),
+   margin (up/flat/down), pos (0-1 within 52w), mom (-1..1), vflag (volatility),
+   ctx (macro line), bull, bear, risk, cat (catalyst), spark (8 pts) */
+const STOCKS = [
+ // quiet
+ {sym:'PIDILITIND',name:'Pidilite Industries',coll:'quiet',price:3120,pg:16,debt:'low',margin:'up',pos:.62,mom:.3,vflag:false,
+  ctx:'The Fevicol company — adhesives are boring until you notice the margins.',
+  bull:'Category monopoly with pricing power; rural demand recovering.',bear:'Rich valuation leaves little room for a slow quarter.',
+  risk:'Crude-linked input costs squeezing margins.',cat:'Rural volume growth re-accelerating.',spark:[2960,2990,3040,3010,3060,3095,3110,3120]},
+ {sym:'ASTRAL',name:'Astral Ltd',coll:'quiet',price:1485,pg:14,debt:'low',margin:'flat',pos:.44,mom:.1,vflag:false,
+  ctx:'Pipes and adhesives riding every new bathroom built in India.',
+  bull:'Housing cycle tailwind; brand premium in a commodity category.',bear:'PVC price swings can dent a quarter without warning.',
+  risk:'Real-estate slowdown hits volumes.',cat:'New adhesives plant scaling up.',spark:[1440,1460,1450,1478,1465,1472,1480,1485]},
+ {sym:'POLYCAB',name:'Polycab India',coll:'quiet',price:7050,pg:22,debt:'low',margin:'up',pos:.71,mom:.5,vflag:false,
+  ctx:'Wires and cables — the picks-and-shovels of the capex boom.',
+  bull:'Market leader in a sector growing 15%+ with the grid buildout.',bear:'Competition from Adani entry could pressure pricing.',
+  risk:'Copper price spikes compress margins.',cat:'Data-centre electrification orders.',spark:[6600,6720,6800,6850,6920,6980,7010,7050]},
+ {sym:'KEI',name:'KEI Industries',coll:'quiet',price:4180,pg:19,debt:'low',margin:'up',pos:.58,mom:.35,vflag:false,
+  ctx:'The smaller, faster-growing cousin in the same wiring boom.',
+  bull:'Capacity expansion landing exactly as demand peaks.',bear:'Smaller scale means less pricing power than Polycab.',
+  risk:'Execution slippage on new capacity.',cat:'EHV cable capacity coming online.',spark:[3980,4020,4060,4100,4090,4140,4160,4180]},
+ // glowup
+ {sym:'TATAMOTORS',name:'Tata Motors',coll:'glowup',price:1010,pg:28,debt:'ok',margin:'up',pos:.55,mom:.2,vflag:true,
+  ctx:'From debt-laden laggard to near-zero net auto debt in three years.',
+  bull:'JLR margins holding; India EV leadership; balance sheet fixed.',bear:'Global luxury demand is softening; EV competition rising.',
+  risk:'JLR demand dip in China/Europe.',cat:'Demerger unlocking CV/PV value.',spark:[940,965,980,1002,988,996,1005,1010]},
+ {sym:'IDFCFIRSTB',name:'IDFC First Bank',coll:'glowup',price:82,pg:31,debt:'ok',margin:'up',pos:.48,mom:.15,vflag:true,
+  ctx:'A infra lender rebuilt into a retail bank, one quarter at a time.',
+  bull:'Deposit franchise compounding; legacy book almost run off.',bear:'Cost-to-income still high vs. peer banks.',
+  risk:'Microfinance stress lingering longer than guided.',cat:'ROE crossing the 13% threshold.',spark:[74,76,78,80,79,81,81.5,82]},
+ {sym:'ETERNAL',name:'Eternal (Zomato)',coll:'glowup',price:305,pg:45,debt:'low',margin:'up',pos:.66,mom:.6,vflag:true,
+  ctx:'The cash-burner that learned to make money — now Blinkit is the story.',
+  bull:'Quick commerce winner-takes-most, and it is winning.',bear:'Blinkit expansion burns cash exactly when competition peaks.',
+  risk:'Instamart/Zepto discount war reigniting.',cat:'Blinkit turning contribution-positive in new cities.',spark:[268,275,284,290,286,296,300,305]},
+ {sym:'SUZLON',name:'Suzlon Energy',coll:'glowup',price:68,pg:52,debt:'ok',margin:'up',pos:.51,mom:.4,vflag:true,
+  ctx:'Left for dead, refinanced, and back with a record order book.',
+  bull:'Wind capex cycle turning; debt resolved; orders at all-time high.',bear:'Execution history is patchy — orders must become revenue.',
+  risk:'Project delays pushing revenue right.',cat:'Quarterly execution run-rate stepping up.',spark:[59,61,63,65,64,66,67,68]},
+ // oldmoney
+ {sym:'ITC',name:'ITC Ltd',coll:'oldmoney',price:465,pg:9,debt:'low',margin:'flat',pos:.4,mom:-.1,vflag:false,
+  ctx:'Cigarette cash machine funding a serious FMCG second act.',
+  bull:'Hotels demerged, FMCG margins inching up, 3%+ dividend yield.',bear:'Core cigarette volumes grow slowly at best.',
+  risk:'Tax shocks on tobacco in any budget.',cat:'FMCG margin crossing double digits.',spark:[472,470,468,466,469,464,466,465]},
+ {sym:'M&M',name:'Mahindra & Mahindra',coll:'oldmoney',price:3350,pg:20,debt:'low',margin:'up',pos:.78,mom:.55,vflag:false,
+  ctx:'Tractors paid the bills while SUVs became the main character.',
+  bull:'SUV order backlog plus farm-cycle recovery — twin engines.',bear:'EV investments are heavy and returns are years out.',
+  risk:'Monsoon disappointment hits tractor demand.',cat:'New SUV launches sustaining waitlists.',spark:[3080,3150,3200,3260,3240,3300,3330,3350]},
+ {sym:'TITAN',name:'Titan Company',coll:'oldmoney',price:3720,pg:12,debt:'low',margin:'flat',pos:.52,mom:.1,vflag:false,
+  ctx:'The Tata house of jewellery — where gold prices meet brand trust.',
+  bull:'Wedding demand is structural; market share keeps shifting formal.',bear:'High gold prices pinch volumes even as value grows.',
+  risk:'Gold volatility distorting demand.',cat:'Studded-jewellery mix improving margins.',spark:[3580,3620,3660,3700,3680,3705,3710,3720]},
+ {sym:'HDFCBANK',name:'HDFC Bank',coll:'oldmoney',price:1990,pg:11,debt:'low',margin:'flat',pos:.69,mom:.25,vflag:false,
+  ctx:'The merger digestion is ending — the elephant wants to dance again.',
+  bull:'Deposit growth normalising; best-in-class asset quality.',bear:'Size means growth can only be so fast.',
+  risk:'NIM pressure if rate cuts run deep.',cat:'Loan growth re-matching deposit growth.',spark:[1880,1905,1930,1950,1945,1970,1980,1990]},
+ // defence
+ {sym:'HAL',name:'Hindustan Aeronautics',coll:'defence',price:4820,pg:24,debt:'low',margin:'up',pos:.6,mom:.45,vflag:true,
+  ctx:'India builds its own fighter jets now — this is who builds them.',
+  bull:'Decade-long order visibility; engine supply issues easing.',bear:'Execution depends on GE engine deliveries it does not control.',
+  risk:'Engine supply delays stalling Tejas deliveries.',cat:'Tejas Mk1A delivery ramp.',spark:[4450,4550,4620,4700,4660,4740,4790,4820]},
+ {sym:'BEL',name:'Bharat Electronics',coll:'defence',price:405,pg:26,debt:'low',margin:'up',pos:.72,mom:.6,vflag:true,
+  ctx:'Radars, missiles electronics, and a near-monopoly customer relationship.',
+  bull:'Highest-quality defence PSU: margins, cash, order book all strong.',bear:'Valuation already prices years of flawless execution.',
+  risk:'Order inflow lumpy quarter to quarter.',cat:'QRSAM production order landing.',spark:[368,376,384,392,388,398,402,405]},
+ {sym:'BDL',name:'Bharat Dynamics',coll:'defence',price:1560,pg:30,debt:'low',margin:'up',pos:.45,mom:.2,vflag:true,
+  ctx:'The missile maker — smaller, spikier, pure-play on munitions demand.',
+  bull:'Munitions restocking is a global theme and India is no exception.',bear:'Revenue concentration in a handful of programs.',
+  risk:'Supply-chain gaps in propellants/electronics.',cat:'Export clearances for Akash systems.',spark:[1490,1510,1535,1550,1528,1545,1552,1560]},
+ {sym:'MAZDOCK',name:'Mazagon Dock',coll:'defence',price:3150,pg:35,debt:'low',margin:'up',pos:.68,mom:.65,vflag:true,
+  ctx:'Submarines take a decade to build — the order book reads like one.',
+  bull:'P-75I submarine program is a multi-year revenue lock-in.',bear:'Shipbuilding margins are famously hard to sustain.',
+  risk:'Margin normalisation from one-off highs.',cat:'Next submarine contract signature.',spark:[2850,2940,3000,3080,3020,3090,3120,3150]},
+ // buying
+ {sym:'TRENT',name:'Trent Ltd',coll:'buying',price:6200,pg:38,debt:'low',margin:'up',pos:.58,mom:.4,vflag:true,
+  ctx:'Zudio made fast fashion profitable in India. Nobody else has.',
+  bull:'Store economics so good expansion funds itself.',bear:'Growth priced to perfection — any slowdown gets punished.',
+  risk:'Same-store growth cooling as base expands.',cat:'Zudio beauty format scaling.',spark:[5800,5900,6000,6100,6040,6120,6160,6200]},
+ {sym:'DMART',name:'Avenue Supermarts',coll:'buying',price:4450,pg:13,debt:'low',margin:'flat',pos:.38,mom:-.05,vflag:false,
+  ctx:'DMart — the everyday-low-prices machine grinding out store after store.',
+  bull:'Unmatched cost discipline; quick-commerce fears look overdone.',bear:'Online grocery is a real structural threat to footfall.',
+  risk:'Quick commerce eating urban basket share.',cat:'DMart Ready reacceleration.',spark:[4560,4520,4490,4470,4480,4455,4460,4450]},
+ {sym:'NYKAA',name:'Nykaa (FSN)',coll:'buying',price:215,pg:34,debt:'low',margin:'up',pos:.64,mom:.5,vflag:true,
+  ctx:'Beauty is the fastest-compounding shelf in Indian retail.',
+  bull:'Category leadership plus improving profitability, finally together.',bear:'Fashion vertical still burns; competition from q-commerce.',
+  risk:'Marketing spend creeping back up.',cat:'Beauty EBITDA margin expansion.',spark:[196,200,205,209,206,211,213,215]},
+ {sym:'VBL',name:'Varun Beverages',coll:'buying',price:520,pg:21,debt:'ok',margin:'up',pos:.35,mom:-.15,vflag:false,
+  ctx:'Every Pepsi in half of India (and now Africa) flows through them.',
+  bull:'Africa expansion replays the India playbook from year one.',bear:'A bad summer is literally a bad year for volumes.',
+  risk:'Unseasonal rains denting peak-season sales.',cat:'Africa territories turning profitable.',spark:[545,538,532,528,530,524,522,520]},
+ // wiring
+ {sym:'ABB',name:'ABB India',coll:'wiring',price:5450,pg:18,debt:'low',margin:'up',pos:.42,mom:.05,vflag:false,
+  ctx:'Automation and electrification — selling shovels to every capex story.',
+  bull:'Order inflows diversified across data centres, rail, renewables.',bear:'Valuation assumes the capex cycle never pauses.',
+  risk:'Private capex deferrals in an election-adjacent year.',cat:'Data-centre order announcements.',spark:[5300,5350,5390,5420,5400,5430,5440,5450]},
+ {sym:'SIEMENS',name:'Siemens India',coll:'wiring',price:3080,pg:15,debt:'low',margin:'flat',pos:.4,mom:0,vflag:false,
+  ctx:'The grid, the trains, the factories — Siemens wires all three.',
+  bull:'Energy business demerger sharpens the growth story.',bear:'Slower quarters get magnified at this valuation.',
+  risk:'Project-heavy mix delaying margin gains.',cat:'Post-demerger re-rating of energy arm.',spark:[3010,3030,3050,3070,3055,3068,3075,3080]},
+ {sym:'CGPOWER',name:'CG Power',coll:'wiring',price:740,pg:27,debt:'low',margin:'up',pos:.56,mom:.35,vflag:true,
+  ctx:'A governance-scandal survivor now riding the transformer shortage.',
+  bull:'Global transformer shortage means pricing power for years.',bear:'Semiconductor JV is a big bet outside core competence.',
+  risk:'OSAT venture absorbing cash and focus.',cat:'Transformer capacity expansion commissioning.',spark:[690,700,712,725,718,730,736,740]},
+ {sym:'CUMMINSIND',name:'Cummins India',coll:'wiring',price:3620,pg:17,debt:'low',margin:'up',pos:.5,mom:.2,vflag:false,
+  ctx:'Every data centre needs backup power. That is a genset. That is Cummins.',
+  bull:'Data-centre genset demand is a structural, not cyclical, wave.',bear:'Emission-norm transitions can create air-pocket quarters.',
+  risk:'CPCB-V transition disrupting order timing.',cat:'Hyperscaler data-centre wins.',spark:[3480,3520,3550,3580,3560,3595,3610,3620]}
+];
+
+/* ---------------- price feed (DEMO: seeded random walk) ---------------- */
+const PriceFeed = (()=>{
+  function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  function advance(prices, day){
+    const out = {};
+    for(const s of STOCKS){
+      const rnd = mulberry(day*7919 + s.sym.length*131 + s.sym.charCodeAt(0)*17)();
+      const drift = s.mom*0.004 + (s.pg-15)*0.00012;
+      const vol = s.vflag? 0.028 : 0.014;
+      const shock = (rnd-0.5)*2*vol;
+      out[s.sym] = +( (prices[s.sym]||s.price) * (1+drift+shock) ).toFixed(2);
+    }
+    return out;
+  }
+  return {advance};
+})();
+/* ---------------- app state ---------------- */
+let S = {
+  goal:null,            // {name, target, months, riskPct}
+  positions:[],         // open
+  closed:[],            // resolved with verdicts
+  viewed:{},            // collId -> [syms] (persistent view-count, see build note)
+  nudged:{},            // collId -> bool (don't re-nudge same collection)
+  day:0,
+  prices:{},
+  view:'home', coll:null, cardIdx:0
+};
+const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const pct = n => (n>0?'+':'') + n.toFixed(1) + '%';
+const byId = id => document.getElementById(id);
+const stock = sym => STOCKS.find(s=>s.sym===sym);
+const price = sym => S.prices[sym] || stock(sym).price;
+const collOf = id => COLLECTIONS.find(c=>c.id===id);
+const deployed = () => S.positions.reduce((a,p)=>a+p.amount,0);
+const curValue = () => S.positions.reduce((a,p)=>a+p.amount*(price(p.sym)/p.entry),0);
+const realized = () => S.closed.reduce((a,p)=>a+p.proceeds,0) - S.closed.reduce((a,p)=>a+p.amount,0);
+async function persist(){ await Store.save(S); }
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+/* ---------------- pulse glyphs ---------------- */
+function rangebar(pos){ return `<div class="rangebar" role="img" aria-label="trading at ${(pos*100)|0}% of its 52-week range"><span class="pin" style="left:${(pos*100).toFixed(0)}%"></span></div>`; }
+function arcGlyph(m){ // momentum as directional arc, -1..1
+  const col = m>0.05?'var(--up)':(m<-0.05?'var(--down)':'var(--muted)');
+  const sweep = Math.abs(m);
+  const y2 = 16 - m*10;
+  return `<svg class="arc" width="46" height="22" viewBox="0 0 46 22" aria-label="momentum ${m>0?'up':m<0?'down':'flat'}"><path d="M4 ${16+ (m<0? -m*6:0)} Q 23 ${16 - m*22} 42 ${y2}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linecap="round" opacity="${0.5+sweep*0.5}"/><circle cx="42" cy="${y2}" r="2.6" fill="${col}"/></svg>`;
+}
+function sparkline(pts, w=110, h=30){
+  const mn=Math.min(...pts), mx=Math.max(...pts), rg=(mx-mn)||1;
+  const step=w/(pts.length-1);
+  const d=pts.map((p,i)=>`${i?'L':'M'}${(i*step).toFixed(1)} ${(h-3-((p-mn)/rg)*(h-6)).toFixed(1)}`).join(' ');
+  const up = pts[pts.length-1]>=pts[0];
+  return `<svg class="sline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${up?'var(--up)':'var(--down)'}" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+function debtLabel(d){return d==='low'?'barely any debt':d==='ok'?'debt under control':'carrying real debt'}
+function marginGlyph(m){return m==='up'?'<span class="up">▲ widening</span>':m==='down'?'<span class="down">▼ shrinking</span>':'<span style="color:var(--muted)">— steady</span>'}
+
+/* ---------------- shell / router ---------------- */
+const ICONS = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 6v11a1 1 0 01-1 1h-5v-6h-4v6H5a1 1 0 01-1-1V9z"/></svg>',
+  disc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',
+  port:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 4-6"/></svg>'
+};
+function render(){
+  const app = byId('app');
+  let html='';
+  if(!S.goal){ html = viewOnboard(); }
+  else if(S.view==='home') html = viewHome();
+  else if(S.view==='discover') html = viewDiscover();
+  else if(S.view==='collection') html = viewCollection();
+  else if(S.view==='portfolio') html = viewPortfolio();
+  app.innerHTML = html + (S.goal? navHtml():'');
+  wire();
+}
+function navHtml(){
+  const t=(k)=>S.view===k||(k==='discover'&&S.view==='collection')?'on':'';
+  return `<nav class="nav" aria-label="Main">
+    <button class="${t('home')}" data-nav="home">${ICONS.home}Goal</button>
+    <button class="${t('discover')}" data-nav="discover">${ICONS.disc}Discover</button>
+    <button class="${t('portfolio')}" data-nav="portfolio">${ICONS.port}Portfolio</button>
+  </nav>`;
+}
+function go(v){ S.view=v; persist(); render(); window.scrollTo(0,0); }
+function toast(msg){
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 2600);
+}
+
+/* ---------------- onboarding: create the goal ---------------- */
+function viewOnboard(){
+  return `<div class="view" style="display:flex;flex-direction:column;justify-content:center;min-height:100dvh;padding-bottom:40px">
+    <p class="brand" style="font-size:26px">hunch<em>.</em></p>
+    <h1 style="font-size:34px;line-height:1.15;margin:18px 0 10px">What are you<br><span class="script" style="color:var(--brass)">playing for?</span></h1>
+    <p class="small" style="margin-bottom:26px">Set a target. Every pick you make fills it — or doesn't. Virtual money, real market prices, your calls.</p>
+    <label class="eyebrow" for="gname">The goal</label>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin:8px 0 14px">
+      <button class="chip gsug">Goa fund</button><button class="chip gsug">Emergency cushion</button><button class="chip gsug">Beat the index</button><button class="chip gsug">New laptop</button>
+    </div>
+    <input id="gname" placeholder="Name it — e.g. Bali, December" style="margin-bottom:14px" maxlength="40">
+    <label class="eyebrow" for="gamt">Target amount</label>
+    <input id="gamt" type="number" inputmode="numeric" placeholder="50000" style="margin:8px 0 14px">
+    <label class="eyebrow" for="gmo">Timeframe</label>
+    <div class="row" style="gap:8px;margin:8px 0 22px">
+      <button class="chip mo" data-m="3">3 months</button>
+      <button class="chip mo on" data-m="6">6 months</button>
+      <button class="chip mo" data-m="12">12 months</button>
+    </div>
+    <button class="btn btn-primary" id="gmk" disabled>Set the goal</button>
+    <p class="tiny" style="margin-top:14px;text-align:center">Your risk budget sets itself: max 25% of this goal in any single pick — a nudge, never a wall.</p>
+  </div>`;
+}
+
+/* ---------------- home: goal meter ---------------- */
+function goalMeter(previewAmt=0){
+  const t=S.goal.target, val=curValue()+realized(), dep=deployed();
+  const fillPct=Math.min(100,(val/t)*100), ghostPct=Math.min(100,((val+previewAmt)/t)*100);
+  return `<div class="vessel" role="img" aria-label="goal ${fillPct.toFixed(0)}% filled">
+    <span class="ghost" style="width:${ghostPct}%"></span>
+    <span class="fill" style="width:${fillPct}%"></span>
+  </div>
+  <div class="spread" style="margin-top:8px">
+    <span class="small"><span class="mono" style="color:var(--text)">${fmt(val)}</span> working</span>
+    <span class="tiny mono">${fmt(t)}</span>
+  </div>`;
+}
+function viewHome(){
+  const g=S.goal, open=S.positions.length, dep=deployed(), val=curValue(), pl=val-dep;
+  const pldisp = dep>0? `<span class="${pl>=0?'up':'down'} mono">${pl>=0?'+':''}${fmt(Math.abs(pl)).replace('₹', pl>=0?'₹':'-₹')}</span>`:'';
+  return `<div class="view">
+    <div class="topbar"><span class="brand">hunch<em>.</em></span>
+      <span class="demo-pill">day ${S.day} · demo prices <button id="tick">advance ›</button></span>
+    </div>
+    <p class="eyebrow">${esc(g.months)}-month goal</p>
+    <h1 style="font-size:30px;margin:4px 0 18px" class="script">${esc(g.name)}</h1>
+    ${goalMeter()}
+    <div class="row" style="gap:20px;margin-top:18px">
+      <div class="pair"><span class="term mono" style="font-size:15px">${open}</span><span class="plain">open call${open===1?'':'s'}</span></div>
+      <div class="pair"><span class="term mono" style="font-size:15px">${fmt(dep)}</span><span class="plain">deployed</span></div>
+      ${dep>0?`<div class="pair"><span class="term" style="font-size:15px">${pldisp}</span><span class="plain">unrealised</span></div>`:''}
+    </div>
+    <hr class="hr" style="margin:24px 0">
+    ${open===0 && S.closed.length===0 ? `
+      <div class="card" style="text-align:center;padding:34px 20px">
+        <p class="script" style="font-size:20px;margin-bottom:8px">Nothing's caught your eye yet.</p>
+        <p class="small" style="margin-bottom:20px">Go meet a few stocks. No commitment — you're just browsing.</p>
+        <button class="btn btn-primary" data-nav="discover">Start browsing</button>
+      </div>`
+    : `
+      <p class="eyebrow" style="margin-bottom:12px">Open calls</p>
+      ${S.positions.map(posRow).join('') || '<p class="small">All calls resolved — check Portfolio for verdicts.</p>'}
+      <button class="btn btn-ghost" data-nav="discover" style="margin-top:8px">Browse for the next one</button>`}
+  </div>`;
+}
+function posRow(p){
+  const cur=price(p.sym), ch=((cur/p.entry)-1)*100, s=stock(p.sym);
+  return `<button class="pos" data-pos="${p.id}">
+    <div class="spread">
+      <div><strong>${esc(s.name)}</strong><div class="tiny mono">${p.sym} · in at ${fmt(p.entry)}</div></div>
+      <div style="text-align:right"><span class="mono ${ch>=0?'up':'down'}">${pct(ch)}</span>
+      <div class="tiny">target ${pct(p.thesis.target)} by day ${p.thesis.byDay}</div></div>
+    </div>
+  </button>`;
+}
+/* ---------------- discover ---------------- */
+function viewDiscover(){
+  return `<div class="view">
+    <div class="topbar"><span class="brand">hunch<em>.</em></span></div>
+    <h1 style="font-size:26px;margin-bottom:4px">Who's out there</h1>
+    <p class="small" style="margin-bottom:20px">Six rooms, different energies. The tag tells you what kind of bet you're walking into.</p>
+    ${COLLECTIONS.map(c=>{
+      const n=STOCKS.filter(s=>s.coll===c.id).length;
+      const seen=(S.viewed[c.id]||[]).length;
+      return `<button class="coll" data-coll="${c.id}">
+        <span class="tier ${c.tier}"><span class="dot"></span>${c.tier==='quality'?'steady · fundamentals':'high heat · momentum'}</span>
+        <h2>${esc(c.name)}</h2>
+        <p>${esc(c.line)}</p>
+        <div class="meta"><span class="tiny">${n} stocks${seen?` · ${seen} met`:''}</span><span style="color:var(--brass);font-size:18px">→</span></div>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
+/* ---------------- collection: swipeable card stack ---------------- */
+function viewCollection(){
+  const c=collOf(S.coll), list=STOCKS.filter(s=>s.coll===c.id);
+  return `<div class="view" style="padding-left:0;padding-right:0">
+    <div style="padding:0 20px">
+      <div class="topbar"><button class="btn-quiet" data-nav="discover" style="padding:0">‹ Rooms</button>
+        <span class="tier ${c.tier}"><span class="dot"></span>${c.tier==='quality'?'steady':'high heat'}</span></div>
+      <h1 class="script" style="font-size:26px">${esc(c.name)}</h1>
+      <p class="small" style="margin:4px 0 14px">${esc(c.line)}</p>
+    </div>
+    <div class="stack" id="stack">${list.map(stockCard).join('')}</div>
+    <div class="dots" id="dots">${list.map((_,i)=>`<i class="${i===0?'on':''}"></i>`).join('')}</div>
+    <div id="nudgeslot" style="padding:0 20px"></div>
+  </div>`;
+}
+function stockCard(s){
+  const cur=price(s.sym), ch52=s.pos;
+  return `<article class="scard" data-sym="${s.sym}" aria-label="${esc(s.name)}">
+    <div class="spread">
+      <div><strong style="font-size:17px">${esc(s.name)}</strong><div class="tiny mono">${s.sym} · NSE</div></div>
+      <div style="text-align:right"><span class="mono" style="font-size:17px">${fmt(cur)}</span>${sparkline(s.spark.concat([cur]))}</div>
+    </div>
+    <div class="pulse" style="margin-top:8px">
+      <p class="plabel">Fundamentals</p>
+      <div class="statgrid">
+        <div class="pair"><span class="term mono">${pct(s.pg)} YoY profit growth</span><span class="plain">earning ${s.pg}% more than last year</span></div>
+        <div class="pair"><span class="term">${s.debt} leverage</span><span class="plain">${debtLabel(s.debt)}</span></div>
+        <div class="pair"><span class="term">margins ${marginGlyph(s.margin)}</span><span class="plain">keeps ${s.margin==='up'?'more':'the same'} of every rupee earned</span></div>
+      </div>
+      <p class="voice">${s.pg>=20?'Been quietly killing it — the numbers back the story.':s.pg>=12?'Solid, steady, not showing off.':'Grown-up growth. No fireworks, no drama.'}</p>
+    </div>
+    <div class="pulse">
+      <p class="plabel">Price action</p>
+      <div class="spread" style="margin-bottom:6px">
+        <span class="pair"><span class="term">52-week range</span><span class="plain">where it sits vs. its year's high &amp; low</span></span>
+        ${arcGlyph(s.mom)}
+      </div>
+      ${rangebar(s.pos)}
+      <div class="spread" style="margin-top:6px">
+        <span class="tiny">momentum: ${s.mom>0.3?'running hot':s.mom>0.05?'warming up':s.mom<-0.05?'cooling off':'flat'}</span>
+        ${s.vflag?'<span class="tiny" style="color:var(--peri)">◆ swings hard — size accordingly</span>':''}
+      </div>
+    </div>
+    <div class="pulse">
+      <p class="plabel">The context</p>
+      <p style="font-size:14px">${esc(s.ctx)}</p>
+    </div>
+    <button class="btn-quiet casebtn" data-sym="${s.sym}" aria-expanded="false" style="width:100%;text-align:left;padding:10px 0 0;color:var(--brass);font-weight:600;font-size:13.5px">Open the case file ↓</button>
+    <div class="case" id="case-${s.sym}">
+      <div class="kv"><p class="k up">Bull case</p><p class="v">${esc(s.bull)}</p></div>
+      <div class="kv"><p class="k down">Bear case</p><p class="v">${esc(s.bear)}</p></div>
+      <div class="kv"><p class="k" style="color:var(--peri)">The one risk</p><p class="v">${esc(s.risk)}</p></div>
+      <div class="kv"><p class="k" style="color:var(--brass)">The catalyst</p><p class="v">${esc(s.cat)}</p></div>
+    </div>
+    <button class="btn btn-primary callbtn" data-sym="${s.sym}" style="margin-top:16px">Make the call</button>
+  </article>`;
+}
+function maybeNudge(){
+  const cid=S.coll, seen=S.viewed[cid]||[];
+  if(seen.length>=3 && !S.nudged[cid]){
+    S.nudged[cid]=true; persist();
+    const c=collOf(cid);
+    const slot=byId('nudgeslot');
+    if(slot) slot.innerHTML=`<div class="nudge" role="status">
+      <p>You've met <strong>${seen.length}</strong> in ${esc(c.name)} — want to see them side by side?</p>
+      <button id="cmpbtn">Stack them up →</button></div>`;
+    const b=byId('cmpbtn'); if(b) b.onclick=()=>openCompare(cid);
+  }
+}
+function openCompare(cid){
+  const syms=(S.viewed[cid]||[]); const c=collOf(cid);
+  openSheet(`
+    <p class="eyebrow" style="margin-bottom:4px">Side by side</p>
+    <h2 class="script" style="font-size:22px;margin-bottom:14px">${esc(c.name)}</h2>
+    <table class="cmp"><thead><tr><th>Stock</th><th>Profit ↑</th><th>52w spot</th><th>Momentum</th></tr></thead><tbody>
+    ${syms.map(sym=>{const s=stock(sym);return `<tr>
+      <td><strong>${s.sym}</strong><div class="tiny mono">${fmt(price(sym))}</div></td>
+      <td class="mono">${pct(s.pg)}</td>
+      <td style="min-width:80px">${rangebar(s.pos)}</td>
+      <td>${arcGlyph(s.mom)}</td></tr>`}).join('')}
+    </tbody></table>
+    <p class="tiny" style="margin-top:14px">Same jargon, plain reading: profit ↑ = how much more it earns than a year ago; 52w spot = where price sits in its yearly range.</p>
+    <button class="btn btn-ghost" style="margin-top:16px" onclick="closeSheet()">Back to browsing</button>
+  `);
+}
+/* ---------------- sheet infra ---------------- */
+function openSheet(inner){
+  closeSheet();
+  const v=document.createElement('div'); v.className='sheet-veil'; v.id='veil';
+  v.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${inner}</div>`;
+  v.addEventListener('click',e=>{ if(e.target===v) closeSheet(); });
+  document.body.appendChild(v);
+}
+function closeSheet(){ const v=byId('veil'); if(v) v.remove(); }
+
+/* ---------------- thesis → size → confirm flow ---------------- */
+const REASONS=[
+  {k:'fundamentals',label:'The numbers',plain:'profits, margins, balance sheet'},
+  {k:'momentum',label:'The move',plain:'price trend, market interest'},
+  {k:'story',label:'The story',plain:'sector theme, catalyst, narrative'}
+];
+let draft=null;
+function startCall(sym){
+  const s=stock(sym);
+  draft={sym, reasonType:null, reasonText:'', target:10, horizon:63, conviction:null, amount:0};
+  openSheet(thesisStep(s));
+  wireThesis(s);
+}
+function thesisStep(s){
+  return `<p class="eyebrow">Step 1 of 3 · The thesis</p>
+  <h2 class="script" style="font-size:23px;margin:6px 0 4px">Why ${esc(s.name)}?</h2>
+  <p class="small" style="margin-bottom:16px">Say it before you commit. This note is <strong>private</strong> until the call resolves — sharing is your choice, after the verdict, never before.</p>
+  <p class="tiny" style="margin-bottom:6px">BETTING <b style="color:var(--up)">UP</b> BECAUSE…</p>
+  <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    ${REASONS.map(r=>`<button class="chip rchip" data-r="${r.k}">${r.label}<span class="tiny" style="display:block">${r.plain}</span></button>`).join('')}
+  </div>
+  <textarea id="rtext" rows="2" maxlength="140" placeholder="…in one honest line. e.g. 'order book is real and margins just turned'"></textarea>
+  <p class="tiny" style="margin:14px 0 6px">EXPECTING</p>
+  <div class="row" style="gap:8px">
+    ${[5,10,20].map(t=>`<button class="chip tchip ${t===10?'on':''}" data-t="${t}">+${t}%</button>`).join('')}
+  </div>
+  <p class="tiny" style="margin:14px 0 6px">BY</p>
+  <div class="row" style="gap:8px;margin-bottom:16px">
+    ${[[21,'~1 month'],[63,'~3 months'],[126,'~6 months']].map(([d,l],i)=>`<button class="chip hchip ${i===1?'on':''}" data-h="${d}">${l}</button>`).join('')}
+  </div>
+  <div class="card" style="padding:12px 14px;background:var(--card2);margin-bottom:16px">
+    <p class="tiny">Heads up: verdicts here come in three flavours — <span class="up">Called it</span>, <span style="color:var(--brass)">Right for the wrong reason</span>, and <span class="down">Missed it</span>. Partial credit is real. Being right matters; knowing <em>why</em> you were right matters more.</p>
+  </div>
+  <button class="btn btn-primary" id="tnext" disabled>Size it →</button>`;
+}
+function wireThesis(s){
+  const upd=()=>{ byId('tnext').disabled = !(draft.reasonType && byId('rtext').value.trim().length>=8); };
+  document.querySelectorAll('.rchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.rchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.reasonType=b.dataset.r;upd();});
+  document.querySelectorAll('.tchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.target=+b.dataset.t;});
+  document.querySelectorAll('.hchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.hchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.horizon=+b.dataset.h;});
+  byId('rtext').oninput=upd;
+  byId('tnext').onclick=()=>{ draft.reasonText=byId('rtext').value.trim(); openSheet(sizeStep(s)); wireSize(s); };
+}
+/* sizing: OPEN PARAMETER — default f(riskBudget, conviction) below; tune freely */
+const SIZE_BANDS={low:[0.05,0.10],medium:[0.10,0.18],high:[0.18,0.25]};
+function sizeStep(s){
+  const t=S.goal.target;
+  return `<p class="eyebrow">Step 2 of 3 · The size</p>
+  <h2 class="script" style="font-size:23px;margin:6px 0 4px">How sure are you?</h2>
+  <p class="small" style="margin-bottom:14px">Your goal's risk budget: up to <span class="mono">25%</span> (${fmt(t*0.25)}) in any single pick. A guide, not a gate.</p>
+  <div class="row" style="gap:8px;margin-bottom:16px">
+    ${['low','medium','high'].map(c=>`<button class="chip cchip" data-c="${c}">${c}</button>`).join('')}
+  </div>
+  <div id="sizebox" style="display:none">
+    <p class="tiny" style="margin-bottom:6px">SUGGESTED FOR THIS CONVICTION: <span id="srange" class="mono" style="color:var(--brass)"></span></p>
+    <input id="samt" type="number" inputmode="numeric" placeholder="Amount in ₹" style="margin-bottom:10px">
+    <div id="softwarn"></div>
+    <p class="tiny" style="margin:12px 0 6px">YOUR GOAL, WITH THIS DEPLOYED</p>
+    <div id="ghostmeter">${goalMeter(0)}</div>
+    <button class="btn btn-primary" id="snext" disabled style="margin-top:16px">Review the call →</button>
+  </div>`;
+}
+function wireSize(s){
+  const t=S.goal.target;
+  document.querySelectorAll('.cchip').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.cchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    draft.conviction=b.dataset.c;
+    const [lo,hi]=SIZE_BANDS[draft.conviction];
+    byId('sizebox').style.display='block';
+    byId('srange').textContent=`${fmt(t*lo)} – ${fmt(t*hi)}`;
+    if(!byId('samt').value) byId('samt').value=Math.round(t*(lo+hi)/2/100)*100;
+    byId('samt').dispatchEvent(new Event('input'));
+  });
+  document.body.addEventListener('input',function h(e){
+    if(e.target && e.target.id==='samt'){
+      const a=+e.target.value||0; draft.amount=a;
+      byId('snext').disabled=!(a>0);
+      byId('ghostmeter').innerHTML=goalMeter(a);
+      const w=byId('softwarn'), share=a/t;
+      if(share>0.4) w.innerHTML=`<p class="small" style="color:var(--down)">You're really committing here — that's <span class="mono">${(share*100).toFixed(0)}%</span> of the whole goal in one stock. Most spread this across 3–4 picks. Your call, always.</p>`;
+      else if(share>0.25) w.innerHTML=`<p class="small" style="color:var(--brass)">That's past your <span class="mono">25%</span> single-pick budget (${(share*100).toFixed(0)}%). Fine if it's deliberate.</p>`;
+      else w.innerHTML='';
+    }
+  });
+  const n=byId('snext'); if(n) n.onclick=()=>{ openSheet(confirmStep(s)); wireConfirm(s); };
+}
+function noteHtml(th, sym, dated){
+  const r=REASONS.find(x=>x.k===th.reasonType);
+  return `<div class="note"><p class="qt">Betting <b>UP</b> on ${esc(stock(sym).name)} because <b>${esc(th.reasonText)}</b> <span class="tiny">(${r?r.label.toLowerCase():''})</span> — expecting <b>+${th.target}%</b> within <b>${th.horizon} market days</b>.</p>
+  <p class="sig">— you, day ${dated} · private until this resolves</p></div>`;
+}
+function confirmStep(s){
+  const cur=price(s.sym);
+  return `<p class="eyebrow">Step 3 of 3 · The call</p>
+  <h2 class="script" style="font-size:23px;margin:6px 0 14px">Read it back.</h2>
+  ${noteHtml(draft, draft.sym, S.day)}
+  <div class="spread" style="margin:16px 0">
+    <div class="pair"><span class="term mono" style="font-size:16px">${fmt(draft.amount)}</span><span class="plain">virtual capital in</span></div>
+    <div class="pair" style="text-align:right"><span class="term mono" style="font-size:16px">${fmt(cur)}</span><span class="plain">entry price · live-tracked</span></div>
+  </div>
+  <button class="btn btn-primary" id="exec">Place the call</button>
+  <button class="btn btn-quiet" onclick="closeSheet()" style="width:100%">Not yet</button>
+  <p class="tiny" style="text-align:center;margin-top:6px">Virtual money in v1. Real broker execution (Kite / Groww / Upstox) lands in v2 — this exact screen will resurface your thesis before any real order fires.</p>`;
+}
+function wireConfirm(s){
+  byId('exec').onclick=async ()=>{
+    const drivers=['fundamentals','momentum','story'];
+    const c=collOf(s.coll);
+    /* hidden actual driver, weighted by collection tier — revealed at verdict */
+    const seed=(s.sym.charCodeAt(0)+S.day*13)%10;
+    const actual = c.tier==='momentum' ? (seed<5?'momentum':seed<8?'story':'fundamentals')
+                                       : (seed<5?'fundamentals':seed<8?'story':'momentum');
+    S.positions.push({ id:Date.now(), sym:s.sym, amount:draft.amount, entry:price(s.sym),
+      openedDay:S.day, actualDriver:actual,
+      thesis:{reasonType:draft.reasonType, reasonText:draft.reasonText, target:draft.target, byDay:S.day+draft.horizon} });
+    await persist(); closeSheet(); go('home'); toast('Call placed. Now we wait — that\'s the hard part.');
+  };
+}
+
+/* ---------------- portfolio + verdicts ---------------- */
+function viewPortfolio(){
+  return `<div class="view">
+    <div class="topbar"><span class="brand">hunch<em>.</em></span>
+      <span class="demo-pill">day ${S.day} · demo prices <button id="tick">advance ›</button></span></div>
+    <h1 style="font-size:26px;margin-bottom:4px">Your record</h1>
+    <p class="small" style="margin-bottom:20px">Tracked against <em>${esc(S.goal.name)}</em> — the goal is the scoreboard, not raw P&amp;L.</p>
+    ${goalMeter()}
+    <p class="eyebrow" style="margin:24px 0 12px">Open calls</p>
+    ${S.positions.length? S.positions.map(posRow).join(''):'<p class="small" style="margin-bottom:8px">None open. The market will still be here tomorrow.</p>'}
+    <p class="eyebrow" style="margin:24px 0 12px">Resolved</p>
+    ${S.closed.length? S.closed.slice().reverse().map(closedRow).join(''):'<p class="small">Verdicts land here when a call hits its date, its target, or you close it.</p>'}
+  </div>`;
+}
+function closedRow(p){
+  const cls=p.verdict==='Called it'?'v-called':p.verdict==='Missed it'?'v-missed':'v-partial';
+  return `<button class="pos" data-closed="${p.id}"><div class="spread">
+    <div><strong>${esc(stock(p.sym).name)}</strong><div class="tiny mono">${pct(p.finalPct)} vs target ${pct(p.thesis.target)}</div></div>
+    <span class="verdict-stamp ${cls}" style="font-size:14px;padding:3px 10px">${p.verdict}</span>
+  </div></button>`;
+}
+function judge(p, finalPrice){
+  const finalPct=((finalPrice/p.entry)-1)*100;
+  const reached=finalPct>=p.thesis.target;
+  const match=p.actualDriver===p.thesis.reasonType;
+  let verdict, why;
+  const DRIVERLINE={fundamentals:'the quarter\'s numbers did the lifting', momentum:'the price trend carried it — flows, not fundamentals', story:'the narrative/catalyst moved it, not the underlying numbers'};
+  if(reached && match){ verdict='Called it'; why='Target hit, and for the reason you named. That\'s the whole game.'; }
+  else if(reached){ verdict='Right for the wrong reason'; why=`Target hit — but ${DRIVERLINE[p.actualDriver]}. You banked the gain; bank the lesson too.`; }
+  else { verdict='Missed it'; why= finalPct>0? 'Direction right, target too ambitious for the window. Closer than the stamp suggests.' : 'The thesis didn\'t play out in this window. That\'s tuition, not failure.'; }
+  return { ...p, finalPrice, finalPct, proceeds:p.amount*(finalPrice/p.entry), verdict, why, closedDay:S.day };
+}
+function resolvePosition(id, manual){
+  const i=S.positions.findIndex(x=>x.id===id); if(i<0) return;
+  const p=S.positions[i]; const r=judge(p, price(p.sym));
+  S.positions.splice(i,1); S.closed.push(r); persist();
+  showVerdict(r);
+}
+function showVerdict(r){
+  const cls=r.verdict==='Called it'?'v-called':r.verdict==='Missed it'?'v-missed':'v-partial';
+  openSheet(`
+    <p class="eyebrow" style="margin-bottom:10px">The verdict · ${esc(stock(r.sym).name)}</p>
+    <div style="text-align:center;margin:10px 0 18px"><span class="verdict-stamp ${cls}">${r.verdict}</span></div>
+    ${noteHtml(r.thesis, r.sym, r.openedDay)}
+    <div class="spread" style="margin:16px 0">
+      <div class="pair"><span class="term mono ${r.finalPct>=0?'up':'down'}" style="font-size:16px">${pct(r.finalPct)}</span><span class="plain">actual move</span></div>
+      <div class="pair" style="text-align:right"><span class="term mono" style="font-size:16px">+${r.thesis.target}%</span><span class="plain">you expected</span></div>
+    </div>
+    <p class="small" style="margin-bottom:16px">${r.why}</p>
+    <button class="btn btn-ghost" id="shareV">Share this verdict</button>
+    <p class="tiny" style="text-align:center;margin-top:8px">Sharing is opt-in, only ever after resolution. Skipping it is a fine choice.</p>
+    <button class="btn btn-quiet" style="width:100%" onclick="closeSheet();render()">Done</button>
+  `);
+  byId('shareV').onclick=()=>{
+    const txt=`${r.verdict} — ${stock(r.sym).name}: called +${r.thesis.target}%, got ${pct(r.finalPct)}. My reason: "${r.thesis.reasonText}". (hunch.)`;
+    if(navigator.share){ navigator.share({text:txt}).catch(()=>{}); }
+    else { navigator.clipboard && navigator.clipboard.writeText(txt); toast('Copied — paste it anywhere.'); }
+  };
+}
+function openPosition(id){
+  const p=S.positions.find(x=>x.id===id); if(!p) return;
+  const cur=price(p.sym), ch=((cur/p.entry)-1)*100;
+  openSheet(`
+    <p class="eyebrow" style="margin-bottom:6px">Open call · ${esc(stock(p.sym).name)}</p>
+    ${noteHtml(p.thesis,p.sym,p.openedDay)}
+    <div class="spread" style="margin:16px 0">
+      <div class="pair"><span class="term mono ${ch>=0?'up':'down'}" style="font-size:16px">${pct(ch)}</span><span class="plain">since entry (${fmt(p.entry)} → ${fmt(cur)})</span></div>
+      <div class="pair" style="text-align:right"><span class="term mono" style="font-size:16px">day ${p.thesis.byDay}</span><span class="plain">deadline (${p.thesis.byDay-S.day} to go)</span></div>
+    </div>
+    <button class="btn btn-ghost" id="closeP">Close &amp; get the verdict</button>
+    <button class="btn btn-quiet" style="width:100%" onclick="closeSheet()">Let it ride</button>
+  `);
+  byId('closeP').onclick=()=>resolvePosition(id,true);
+}
+
+/* ---------------- market clock ---------------- */
+async function advanceDay(){
+  S.day++; S.prices=PriceFeed.advance(S.prices, S.day);
+  /* auto-resolve calls whose date passed */
+  const due=S.positions.filter(p=>S.day>=p.thesis.byDay);
+  const rest=S.positions.filter(p=>S.day<p.thesis.byDay);
+  let last=null;
+  for(const p of due){ last=judge(p, price(p.sym)); S.closed.push(last); }
+  S.positions=rest;
+  await persist(); render();
+  if(last) showVerdict(last); else toast(`Day ${S.day} — prices moved.`);
+}
+
+/* ---------------- event wiring ---------------- */
+function wire(){
+  document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>go(b.dataset.nav));
+  document.querySelectorAll('[data-coll]').forEach(b=>b.onclick=()=>{S.coll=b.dataset.coll;S.cardIdx=0;markViewed(0);go('collection');});
+  document.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>openPosition(+b.dataset.pos));
+  document.querySelectorAll('[data-closed]').forEach(b=>b.onclick=()=>{const r=S.closed.find(x=>x.id===+b.dataset.closed); if(r) showVerdict(r);});
+  document.querySelectorAll('.casebtn').forEach(b=>b.onclick=()=>{const c=byId('case-'+b.dataset.sym);const open=c.classList.toggle('open');b.setAttribute('aria-expanded',open);b.textContent=open?'Close the case file ↑':'Open the case file ↓';});
+  document.querySelectorAll('.callbtn').forEach(b=>b.onclick=()=>startCall(b.dataset.sym));
+  const tick=byId('tick'); if(tick) tick.onclick=advanceDay;
+  /* onboarding */
+  const gmk=byId('gmk');
+  if(gmk){
+    const upd=()=>{gmk.disabled=!(byId('gname').value.trim()&&(+byId('gamt').value)>0);};
+    byId('gname').oninput=upd; byId('gamt').oninput=upd;
+    document.querySelectorAll('.gsug').forEach(c=>c.onclick=()=>{byId('gname').value=c.textContent;upd();});
+    document.querySelectorAll('.mo').forEach(c=>c.onclick=()=>{document.querySelectorAll('.mo').forEach(x=>x.classList.remove('on'));c.classList.add('on');});
+    gmk.onclick=async ()=>{
+      const m=+document.querySelector('.mo.on').dataset.m;
+      S.goal={name:byId('gname').value.trim(), target:+byId('gamt').value, months:m, riskPct:25};
+      await persist(); go('discover');
+    };
+  }
+  /* card stack: track index, mark viewed, trigger nudge */
+  const stack=byId('stack');
+  if(stack){
+    let t;
+    stack.addEventListener('scroll',()=>{
+      clearTimeout(t);
+      t=setTimeout(()=>{
+        const w=stack.querySelector('.scard').offsetWidth+14;
+        const i=Math.round(stack.scrollLeft/w);
+        if(i!==S.cardIdx){ S.cardIdx=i; markViewed(i);
+          document.querySelectorAll('#dots i').forEach((d,j)=>d.classList.toggle('on',j===i)); }
+      },80);
+    },{passive:true});
+  }
+}
+function markViewed(i){
+  const list=STOCKS.filter(s=>s.coll===S.coll); const s=list[i]; if(!s) return;
+  S.viewed[S.coll]=S.viewed[S.coll]||[];
+  if(!S.viewed[S.coll].includes(s.sym)){ S.viewed[S.coll].push(s.sym); persist(); }
+  maybeNudge();
+}
+
+/* ---------------- boot ---------------- */
+(async function init(){
+  const saved=await Store.load();
+  if(saved) S=Object.assign(S,saved);
+  if(!Object.keys(S.prices).length){ for(const s of STOCKS) S.prices[s.sym]=s.price; }
+  render();
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+})();
+</script>
+</body>
+</html>
