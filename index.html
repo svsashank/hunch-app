@@ -2,858 +2,1691 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hunch — make the call</title>
-<meta name="description" content="Stock picking with confidence. Virtual capital, real prices, your thesis.">
-<meta name="theme-color" content="#14121B">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Hunch</title>
+<meta name="description" content="The market as a living field. A learning space — paper money, not advice.">
+<meta name="theme-color" content="#FCFAF4">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,560;0,9..144,640;1,9..144,420;1,9..144,540&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#14121B;        /* deep plum-ink base */
-  --card:#1E1B27;
-  --card2:#262231;
-  --line:#332D42;
-  --line-soft:#292437;
-  --text:#EFEBF5;
-  --muted:#9C94B0;
-  --faint:#6E6683;
-  --brass:#D6B172;      /* accent: CTAs, goal fill, quality tier */
-  --brass-dim:#8a744e;
-  --peri:#918FF2;       /* momentum / speculative tier */
-  --up:#7FCBA4;
-  --down:#E0715F;
-  --shadow:0 12px 32px rgba(0,0,0,.35);
-  --r:16px;
-  --font-ui:'Archivo',system-ui,sans-serif;
-  --font-display:'Fraunces',Georgia,serif;
-  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --paper:#FCFAF4;
+  --card:#F7F1E6;
+  --ink:#221E17;
+  --sec:#8A7D66;
+  --muted:#9C8F7A;
+  --coral:#D8794A;
+  --teal:#4E9B7E;
+  --line:rgba(34,30,23,.08);
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --sheet-r:26px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
 body{
-  background:var(--ink);color:var(--text);
-  font-family:var(--font-ui);font-size:15px;line-height:1.5;
-  min-height:100dvh;
+  background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.5;
+  overflow:hidden;position:fixed;inset:0;width:100%;
+  -webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;
 }
-#app{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;position:relative}
-.view{flex:1;padding:20px 20px 96px;animation:fadein .28s ease}
-@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,textarea{font-family:var(--sans);color:var(--ink);background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:16px;width:100%;-webkit-user-select:text;user-select:text}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--coral);outline-offset:2px;border-radius:8px}
+.serif{font-family:var(--serif)}
+.label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;font-family:var(--sans)}
 
-h1,h2,.display{font-family:var(--font-display);font-weight:560;letter-spacing:-.01em}
-.script{font-family:var(--font-display);font-style:italic;font-weight:540}
-.mono{font-family:var(--font-mono)}
-button{font-family:var(--font-ui);cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
-button:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:6px}
-input,textarea{font-family:var(--font-ui);color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;width:100%}
-input::placeholder,textarea::placeholder{color:var(--faint)}
+/* ---------- the field ---------- */
+#field{position:fixed;inset:0;display:block;touch-action:none;background:var(--paper)}
+#fieldveil{position:fixed;inset:0;background:var(--paper);opacity:0;pointer-events:none;transition:opacity .5s ease;z-index:5}
+#fieldveil.on{opacity:.55}
 
-/* ---------- shared bits ---------- */
-.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600}
-.tier{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:99px;border:1px solid}
-.tier.quality{color:var(--brass);border-color:rgba(214,177,114,.4)}
-.tier.momentum{color:var(--peri);border-color:rgba(145,143,242,.4)}
-.tier .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-.btn{display:block;width:100%;text-align:center;padding:15px;border-radius:14px;font-weight:600;font-size:15px;transition:transform .12s ease,opacity .12s ease}
-.btn:active{transform:scale(.985)}
-.btn-primary{background:var(--brass);color:#231C0E}
-.btn-primary:disabled{opacity:.35;cursor:default}
-.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
-.btn-quiet{color:var(--muted);font-weight:500;padding:12px}
-.chip{padding:8px 14px;border-radius:99px;border:1px solid var(--line);color:var(--muted);font-size:13.5px;font-weight:500;transition:all .12s}
-.chip.on{border-color:var(--brass);color:var(--brass);background:rgba(214,177,114,.08)}
-.card{background:var(--card);border:1px solid var(--line-soft);border-radius:var(--r);padding:18px}
-.hr{height:1px;background:var(--line-soft);margin:16px 0;border:none}
-.row{display:flex;align-items:center;gap:10px}
-.spread{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.up{color:var(--up)} .down{color:var(--down)}
-.small{font-size:12.5px;color:var(--muted)}
-.tiny{font-size:11.5px;color:var(--faint)}
+/* first-open line */
+#firstline{position:fixed;left:0;right:0;top:22%;text-align:center;z-index:6;pointer-events:none;padding:0 36px;transition:opacity 1.1s ease}
+#firstline p{font-family:var(--serif);font-size:24px;line-height:1.35;color:var(--ink);font-weight:500}
+#firstline.gone{opacity:0}
+#compline{position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));text-align:center;z-index:6;pointer-events:none;font-size:11px;color:var(--muted);letter-spacing:.03em;transition:opacity .8s ease}
+#compline.gone{opacity:0}
 
-/* bilingual stat pair — equal weight, always on */
-.pair{display:flex;flex-direction:column;gap:1px}
-.pair .term{font-size:12px;color:var(--text);font-weight:600}
-.pair .plain{font-size:12px;color:var(--muted);font-weight:400}
+/* coach whispers */
+.whisper{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom));z-index:38;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:9px 18px;font-family:var(--serif);font-style:italic;font-size:14.5px;color:var(--sec);box-shadow:0 6px 24px rgba(34,30,23,.10);opacity:0;transition:opacity .5s ease;max-width:86vw;text-align:center}
+.whisper.on{opacity:1}
 
-/* ---------- pulses (signature glyphs) ---------- */
-.rangebar{position:relative;height:4px;border-radius:2px;background:var(--line);width:100%}
-.rangebar .pin{position:absolute;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:var(--brass);box-shadow:0 0 0 3px rgba(214,177,114,.18)}
-.arc{display:inline-block;vertical-align:middle}
-.sline{display:block}
+/* ---------- search ---------- */
+#searchwrap{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:20;width:min(440px,calc(100vw - 96px))}
+#searchpill{display:flex;align-items:center;gap:8px;background:rgba(247,241,230,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:99px;padding:9px 16px;color:var(--muted);width:100%;transition:box-shadow .25s}
+#searchpill svg{flex:none;opacity:.6}
+#searchpill span{font-family:var(--serif);font-style:italic;font-size:14.5px}
+#searchopen{position:fixed;inset:0;z-index:44;background:rgba(252,250,244,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;flex-direction:column;padding:calc(16px + env(safe-area-inset-top)) 18px 18px}
+#searchopen.on{display:flex}
+#searchopen input{font-family:var(--serif);font-size:20px;background:transparent;border:none;border-bottom:1px solid var(--line);border-radius:0;padding:10px 2px}
+#sresults{margin-top:14px;overflow-y:auto;flex:1}
+.sres{display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:12px 6px;border-radius:14px}
+.sres:active{background:rgba(34,30,23,.04)}
+.sres .dotc{width:22px;height:22px;border-radius:50%;flex:none}
+.sres .nm{font-family:var(--serif);font-size:17px}
+.sres .via{font-size:12px;color:var(--muted)}
 
-/* ---------- top bar & nav ---------- */
-.topbar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px}
-.brand{font-family:var(--font-display);font-style:italic;font-weight:540;font-size:21px;color:var(--text)}
-.brand em{font-style:italic;color:var(--brass)}
-.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;background:rgba(20,18,27,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line-soft);padding:6px 8px calc(10px + env(safe-area-inset-bottom));z-index:40}
-.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;color:var(--faint);font-size:11px;font-weight:600;letter-spacing:.04em}
-.nav button.on{color:var(--brass)}
-.nav svg{width:21px;height:21px}
+/* ---------- yours affordance (moon) ---------- */
+#moonbtn{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:21;width:40px;height:40px;border-radius:50%;background:rgba(247,241,230,.82);backdrop-filter:blur(10px);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+#moonbtn .glowdot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--coral);opacity:0;transition:opacity .4s}
+#moonbtn.hasnews .glowdot{opacity:1}
 
-/* ---------- goal meter (fillable vessel) ---------- */
-.vessel{position:relative;height:14px;border-radius:99px;background:var(--card2);border:1px solid var(--line);overflow:hidden}
-.vessel .fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,var(--brass-dim),var(--brass));border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
-.vessel .ghost{position:absolute;inset:0;width:0%;background:rgba(214,177,114,.22);border-radius:99px}
-.vessel .tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);opacity:.5}
+/* ---------- dials ---------- */
+#dialbtn{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:21;display:flex;align-items:center;gap:8px;background:rgba(247,241,230,.86);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:99px;padding:10px 18px;box-shadow:0 4px 18px rgba(34,30,23,.08)}
+#dialbtn .dsum{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sec)}
+#dials{position:fixed;left:0;right:0;bottom:0;z-index:42;background:var(--card);border-radius:var(--sheet-r) var(--sheet-r) 0 0;box-shadow:0 -10px 40px rgba(34,30,23,.14);padding:20px 20px calc(24px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .42s cubic-bezier(.32,.72,.28,1)}
+#dials.on{transform:none}
+.dialrow{margin-bottom:18px}
+.dialrow .label{display:block;margin-bottom:9px}
+.dialopts{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.dialopts::-webkit-scrollbar{display:none}
+.dopt{flex:none;padding:9px 15px;border-radius:99px;border:1px solid var(--line);color:var(--sec);font-size:13.5px;font-weight:500;background:rgba(255,255,255,.4);transition:all .18s}
+.dopt.on{border-color:var(--ink);color:var(--ink);background:rgba(255,255,255,.75)}
+.dopt:disabled{opacity:.35}
 
-/* ---------- discover feed ---------- */
-.coll{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line-soft);border-radius:var(--r);padding:20px;margin-bottom:14px;transition:border-color .15s}
-.coll:active{border-color:var(--brass-dim)}
-.coll h2{font-size:23px;line-height:1.2;margin:8px 0 6px;font-style:italic;font-weight:540}
-.coll p{color:var(--muted);font-size:14px}
-.coll .meta{margin-top:12px;display:flex;justify-content:space-between;align-items:center}
+/* ---------- scrim + sheets ---------- */
+#scrim{position:fixed;inset:0;background:rgba(34,30,23,.18);opacity:0;pointer-events:none;transition:opacity .35s;z-index:40}
+#scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:46;background:var(--card);border-radius:var(--sheet-r) var(--sheet-r) 0 0;box-shadow:0 -12px 48px rgba(34,30,23,.16);padding:22px 22px calc(28px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .45s cubic-bezier(.32,.72,.28,1);max-height:88dvh;overflow-y:auto;-webkit-user-select:none}
+.sheet.on{transform:none}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:rgba(34,30,23,.14);margin:0 auto 16px}
+.bigserif{font-family:var(--serif);font-size:23px;line-height:1.32;font-weight:500}
+@media(min-width:560px){.sheet,#dials{max-width:520px;left:50%;transform:translate(-50%,105%)}.sheet.on,#dials.on{transform:translate(-50%,0)}}
 
-/* ---------- card stack ---------- */
-.stack{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;padding:4px 20px 20px;margin:0 -20px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.stack::-webkit-scrollbar{display:none}
-.scard{scroll-snap-align:center;flex:0 0 calc(100% - 48px);background:var(--card);border:1px solid var(--line-soft);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
-.pulse{padding:13px 0;border-top:1px solid var(--line-soft)}
-.pulse:first-of-type{border-top:none}
-.pulse .plabel{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:8px}
-.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
-.voice{font-family:var(--font-display);font-style:italic;font-size:15px;color:var(--text);margin-top:10px;line-height:1.45}
-.dots{display:flex;justify-content:center;gap:6px;margin-top:2px}
-.dots i{width:5px;height:5px;border-radius:50%;background:var(--line)}
-.dots i.on{background:var(--brass)}
+/* ---------- the card (bloom) ---------- */
+#bloom{position:fixed;z-index:45;border-radius:50%;pointer-events:none;will-change:transform,border-radius,width,height;display:none}
+#cardwrap{position:fixed;inset:0;z-index:45;display:none;flex-direction:column;justify-content:flex-end;pointer-events:none}
+#cardwrap.on{display:flex}
+#card{pointer-events:auto;position:relative;border-radius:30px 30px 0 0;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;padding:26px 24px calc(30px + env(safe-area-inset-bottom));opacity:0;transition:opacity .3s ease .12s;box-shadow:0 -12px 48px rgba(34,30,23,.18)}
+#card.vis{opacity:1}
+@media(min-width:560px){#cardwrap{align-items:center}#card{max-width:520px;width:100%;border-radius:30px;margin-bottom:4dvh}}
+.chd{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.chd .chip-dot{width:16px;height:16px;border-radius:50%;flex:none;box-shadow:0 0 0 4px rgba(255,255,255,.35)}
+.chd h2{font-family:var(--serif);font-weight:600;font-size:26px;letter-spacing:-.01em}
+.sigline{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--sec);margin:2px 0 20px}
+.noticeline{font-size:12.5px;color:var(--muted);margin:-12px 0 18px;font-style:italic;font-family:var(--serif)}
 
-/* case file */
-.case{margin-top:12px;border:1px dashed var(--line);border-radius:12px;padding:14px;display:none}
-.case.open{display:block}
-.case .kv{margin-bottom:10px}
-.case .kv:last-child{margin-bottom:0}
-.case .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:2px}
-.case .v{font-size:13.5px;color:var(--muted)}
+/* facet deck */
+#deck{position:relative;min-height:196px;margin-bottom:6px}
+.facet{position:absolute;inset:0;opacity:0;transition:opacity .28s ease;pointer-events:none;display:flex;flex-direction:column}
+.facet.on{opacity:1;pointer-events:auto}
+.facet .label{margin-bottom:10px}
+.facet .stmt{font-family:var(--serif);font-size:23px;line-height:1.38;font-weight:500;flex:1}
+@media(max-width:380px){.facet .stmt{font-size:21px}}
+.tellmore{align-self:flex-start;margin-top:12px;font-size:13px;color:var(--sec);border-bottom:1px dotted var(--muted);padding-bottom:1px}
+.tellbody{margin-top:10px;font-size:13.5px;color:var(--sec);line-height:1.55;display:none}
+.tellbody.on{display:block}
+#pager{display:flex;gap:7px;justify-content:center;margin:14px 0 20px}
+#pager .pd{width:6px;height:6px;border-radius:50%;background:rgba(34,30,23,.16);transition:all .25s}
+#pager .pd.on{background:var(--ink);transform:scale(1.25)}
+.pricetemp{font-family:var(--serif);font-size:16px;color:var(--ink);padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.pricetemp em{color:var(--sec);font-style:italic}
+.threads{margin:18px 0 6px}
+.threads .label{display:block;margin-bottom:10px}
+.thread{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.4);font-size:13.5px;color:var(--ink);margin:0 6px 8px 0}
+.thread .arrow{color:var(--muted)}
+/* the eye */
+#eyerow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:20px}
+#eyehint{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--sec)}
+#eyebtn{position:relative;width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.5);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none}
+#eyebtn svg.eyeicon{width:26px;height:26px;stroke:var(--ink);opacity:.75}
+#eyering{position:absolute;inset:-1px}
+#eyering circle{fill:none;stroke:var(--coral);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:194;stroke-dashoffset:194;transform:rotate(-90deg);transform-origin:center}
+#eyebtn.held{background:rgba(216,121,74,.12)}
+#writebtn{display:none;width:100%;margin-top:18px;padding:15px;border-radius:16px;background:var(--ink);color:var(--paper);font-weight:600;font-size:15px}
+#writebtn.show{display:block}
 
-/* ---------- sheets / overlays ---------- */
-.sheet-veil{position:fixed;inset:0;background:rgba(10,8,16,.6);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:flex-end;justify-content:center}
-.sheet{width:100%;max-width:480px;background:var(--card);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:none;padding:22px 20px calc(24px + env(safe-area-inset-bottom));max-height:88dvh;overflow-y:auto;animation:slideup .3s cubic-bezier(.2,.8,.2,1)}
-@keyframes slideup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
-.grab{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+/* ---------- invitation ---------- */
+#invite .trailfrag{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--sec);padding:7px 0;border-bottom:1px dashed var(--line)}
+.btnrow{display:flex;gap:12px;margin-top:22px;align-items:center}
+.btn-ink{flex:1;padding:15px;border-radius:16px;background:var(--ink);color:var(--paper);font-weight:600;text-align:center}
+.btn-quiet{padding:15px 10px;color:var(--muted);font-weight:500}
 
-/* ---------- thesis note (signature artifact) ---------- */
-.note{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:18px;position:relative}
-.note::before{content:'❝';position:absolute;top:8px;left:14px;font-family:var(--font-display);font-size:26px;color:var(--brass);opacity:.7}
-.note .qt{font-family:var(--font-display);font-style:italic;font-size:16.5px;line-height:1.55;padding-left:22px}
-.note .sig{margin-top:12px;padding-left:22px;font-size:12px;color:var(--faint)}
-.note .qt b{color:var(--brass);font-weight:560}
+/* ---------- composer ---------- */
+#composer .sentence{font-family:var(--serif);font-size:24px;line-height:1.5;font-weight:500;margin:8px 0 4px}
+.blank{display:inline-block;min-width:120px;border-bottom:2px solid rgba(34,30,23,.25);color:var(--muted);font-style:italic;padding:0 4px}
+.blank.filled{color:var(--ink);font-style:normal;border-bottom-color:transparent}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.cchip{padding:9px 15px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.45);font-size:13.5px;color:var(--sec)}
+.cchip.on{border-color:var(--ink);color:var(--ink);background:rgba(255,255,255,.8)}
+#reasonbox{margin-top:6px;min-height:74px;font-family:var(--serif);font-size:16px;line-height:1.5;background:rgba(255,255,255,.55)}
+#ceremony{position:fixed;inset:0;z-index:60;background:var(--paper);display:none;align-items:center;justify-content:center;padding:34px;text-align:center}
+#ceremony.on{display:flex}
+#ceremony p{font-family:var(--serif);font-size:24px;line-height:1.45;font-weight:500;opacity:0;transform:translateY(10px);animation:settle 1.5s ease forwards}
+@keyframes settle{0%{opacity:0;transform:translateY(14px);filter:blur(3px)}60%{opacity:1;filter:blur(0)}100%{opacity:1;transform:none}}
 
-/* verdict */
-.verdict-stamp{display:inline-block;font-family:var(--font-display);font-style:italic;font-weight:560;font-size:26px;padding:6px 18px;border:2px solid;border-radius:12px;transform:rotate(-2deg)}
-.v-called{color:var(--up);border-color:var(--up)}
-.v-partial{color:var(--brass);border-color:var(--brass)}
-.v-missed{color:var(--down);border-color:var(--down)}
+/* ---------- sizing ---------- */
+#sizesheet .sure{display:flex;gap:9px;margin:14px 0 22px}
+.notch{flex:1;padding:13px 8px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.45);text-align:center;font-family:var(--serif);font-size:15px;color:var(--sec)}
+.notch.on{border-color:var(--ink);color:var(--ink);background:rgba(255,255,255,.85)}
+#sizesent{font-family:var(--serif);font-size:21px;line-height:1.45;font-weight:500;margin:6px 0 18px;min-height:64px}
+#sizeamt{font-weight:600;transition:color .25s}
+#sizeslider{width:100%;appearance:none;-webkit-appearance:none;height:34px;background:transparent}
+#sizeslider::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:linear-gradient(90deg,rgba(78,155,126,.4),rgba(34,30,23,.12) 60%,rgba(216,121,74,.45))}
+#sizeslider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--card);border:2px solid var(--ink);margin-top:-10.5px;box-shadow:0 2px 8px rgba(34,30,23,.18)}
+#sizeslider::-moz-range-track{height:5px;border-radius:3px;background:rgba(34,30,23,.12)}
+#sizeslider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--card);border:2px solid var(--ink)}
+#bandnote{font-size:12.5px;color:var(--muted);margin-top:4px;min-height:18px}
 
-/* compare table */
-.cmp{width:100%;border-collapse:collapse;font-size:13px}
-.cmp th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--line)}
-.cmp td{padding:10px 6px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+/* ---------- yours ---------- */
+#yours{position:fixed;inset:0;z-index:43;background:var(--paper);transform:translateY(-104%);transition:transform .5s cubic-bezier(.32,.72,.28,1);overflow-y:auto;overscroll-behavior:contain;padding:calc(20px + env(safe-area-inset-top)) 22px calc(40px + env(safe-area-inset-bottom))}
+#yours.on{transform:none}
+#yours .closey{position:sticky;top:0;float:right;width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;z-index:2}
+.ysec{margin-bottom:34px}
+.ysec>.label{display:block;margin-bottom:12px}
+.goalsent{font-family:var(--serif);font-size:25px;line-height:1.4;font-weight:500}
+.goalsent .onpaper{color:var(--sec);font-style:italic;font-size:17px}
+#shifted{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--coral);margin-top:10px}
+#constellation{position:relative;height:230px;margin-top:6px}
+.cstar{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%);animation:breathe 9s ease-in-out infinite}
+.cstar.ringed{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--ink)}
+.cstar .cn{position:absolute;top:calc(100% + 4px);font-size:10.5px;color:var(--muted);white-space:nowrap;left:50%;transform:translateX(-50%)}
+@keyframes breathe{0%,100%{margin-top:0}50%{margin-top:-7px}}
+.hunchrow{padding:16px 0;border-bottom:1px solid var(--line)}
+.hunchrow .hsent{font-family:var(--serif);font-size:17px;line-height:1.45;font-weight:500}
+.hunchrow .hstat{font-size:13px;color:var(--sec);margin-top:6px}
+.hunchrow .hclose{font-size:12.5px;color:var(--muted);margin-top:8px;border-bottom:1px dotted var(--muted)}
+.flarerow{display:flex;gap:13px;align-items:flex-start;padding:15px 0;border-bottom:1px solid var(--line)}
+.flare{width:15px;height:15px;border-radius:50%;flex:none;margin-top:4px}
+.flare.hit{background:var(--teal);box-shadow:0 0 0 4px rgba(78,155,126,.18)}
+.flare.miss{background:var(--muted);box-shadow:0 0 0 4px rgba(156,143,122,.16)}
+.flare.wrongwhy{background:var(--coral);box-shadow:0 0 0 4px rgba(216,121,74,.18)}
+.flarerow .fword{font-family:var(--serif);font-weight:600;font-size:15.5px}
+.flarerow .fdet{font-size:13px;color:var(--sec);margin-top:2px}
+.stylenote{font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.5;color:var(--sec);background:var(--card);border-radius:18px;padding:16px 18px;margin-top:14px}
+#demoday{margin-top:26px;text-align:center}
+#demoday button{font-size:12px;color:var(--muted);border-bottom:1px dotted var(--muted);padding-bottom:1px}
+.ycompline{text-align:center;font-size:11px;color:var(--muted);margin-top:30px;letter-spacing:.03em}
 
-/* positions */
-.pos{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line-soft);border-radius:var(--r);padding:16px;margin-bottom:12px}
+/* ---------- verdict card ---------- */
+#verdict .vflare{width:22px;height:22px;border-radius:50%;margin-bottom:16px;animation:flarein 1.1s ease}
+@keyframes flarein{0%{transform:scale(.2);opacity:0}55%{transform:scale(1.6)}100%{transform:scale(1);opacity:1}}
+#verdict .vword{font-family:var(--serif);font-size:27px;font-weight:600;margin-bottom:10px}
+#verdict .herwords{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.5;color:var(--sec);border-left:2.5px solid var(--line);padding-left:14px;margin:16px 0}
+#verdict .whathap{font-family:var(--serif);font-size:18px;line-height:1.45}
 
-/* toast */
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:92px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 18px;font-size:13.5px;z-index:60;box-shadow:var(--shadow);animation:fadein .25s ease}
+/* zoom home */
+#homebtn{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:14px;z-index:21;width:42px;height:42px;border-radius:50%;background:rgba(247,241,230,.86);border:1px solid var(--line);display:none;align-items:center;justify-content:center;color:var(--sec);backdrop-filter:blur(10px)}
+#homebtn.show{display:flex}
 
-/* nudge banner */
-.nudge{position:sticky;bottom:84px;margin:14px 0 0;background:linear-gradient(120deg,#2A2438,#241F31);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
-.nudge p{font-size:13.5px;flex:1}
-.nudge button{color:var(--brass);font-weight:600;white-space:nowrap;font-size:13.5px}
-
-.demo-pill{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--faint);border:1px dashed var(--line);border-radius:99px;padding:5px 12px}
-.demo-pill button{color:var(--brass);font-weight:600;font-size:11.5px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.12s!important}
+  .cstar{animation:none}
+}
 </style>
 </head>
 <body>
-<div id="app" role="application"></div>
+<canvas id="field" aria-label="the market field"></canvas>
+<div id="fieldveil"></div>
+
+<div id="firstline"><p>This is the whole market.<br>You already know this neighborhood.</p></div>
+<div id="complinewrap"><p id="compline">a learning space · paper money, not advice · demo data</p></div>
+
+<div id="searchwrap"><button id="searchpill" aria-label="search the field">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+<span>someone on your mind?</span></button></div>
+
+<button id="moonbtn" aria-label="yours">
+<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#221E17" stroke-width="1.8"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+<span class="glowdot"></span></button>
+
+<button id="homebtn" aria-label="whole field"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+
+<button id="dialbtn" aria-label="gather and paint">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A7D66" stroke-width="2"><circle cx="7" cy="7" r="3.4"/><circle cx="17" cy="15" r="3.4"/></svg>
+<span class="dsum" id="dsum">by sector</span></button>
+
+<div id="dials" role="dialog" aria-label="the two dials">
+  <div class="grab"></div>
+  <div class="dialrow"><span class="label">gather by</span><div class="dialopts" id="gatheropts"></div></div>
+  <div class="dialrow" style="margin-bottom:4px"><span class="label">paint by</span><div class="dialopts" id="paintopts"></div></div>
+</div>
+
+<div id="searchopen">
+  <input id="searchinput" placeholder="a name, a brand — Zudio works" autocomplete="off">
+  <div id="sresults"></div>
+</div>
+
+<div id="scrim"></div>
+<div id="bloom"></div>
+
+<div id="cardwrap"><div id="card"></div></div>
+
+<div class="sheet" id="invite"></div>
+<div class="sheet" id="composer"></div>
+<div class="sheet" id="goalsheet"></div>
+<div class="sheet" id="sizesheet"></div>
+<div class="sheet" id="verdict"></div>
+<div id="ceremony"></div>
+<div id="yours"></div>
+<div class="whisper" id="whisper"></div>
 <script>
-/* ============================================================
-   HUNCH — v1 build (virtual capital, real-market demo prices)
-   PRICE FEED ADAPTER: replace PriceFeed.advance()/PriceFeed.get()
-   with a live NSE quote source. Everything downstream is agnostic.
-   ============================================================ */
-/* ---------------- storage: artifact runtime → localStorage → memory ---------------- */
-const Store = (() => {
-  const KEY = 'hunch-state-v1';
-  let mem = null;
-  async function load(){
-    try{ if(window.storage){ const r = await window.storage.get(KEY); if(r&&r.value) return JSON.parse(r.value);} }catch(e){}
-    try{ const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){}
-    return mem;
-  }
-  async function save(s){
-    mem = s;
-    try{ if(window.storage){ await window.storage.set(KEY, JSON.stringify(s)); return; } }catch(e){}
-    try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){}
-  }
-  return {load, save};
-})();
+'use strict';
+/* =====================================================================
+   Hunch v1 — the field, the encounter, the arc, the verdict.
+   Single file, per spec. Content below is demo/seed data standing in
+   for the offline agent pipeline (§9); every reading is descriptive.
+   ===================================================================== */
 
-/* ---------------- data: collections + stocks (DEMO DATA) ----------------
-   Stats are plausible but static seed values, not live figures. */
-const COLLECTIONS = [
-  {id:'quiet', name:'The Quiet Overachievers', tier:'quality',
-   line:'No headlines, no drama — just profits that keep showing up every quarter.'},
-  {id:'glowup', name:'Stocks With a Glow-Up', tier:'momentum',
-   line:'Written off two years ago. Look at them now. Turnarounds mid-arc.'},
-  {id:'oldmoney', name:'Old Money, New Tricks', tier:'quality',
-   line:'Legacy names quietly rewiring themselves for the next decade.'},
-  {id:'defence', name:'The Defence Brief', tier:'momentum',
-   line:'Order books are full and the government is the customer. High heat, real cyclicality.'},
-  {id:'buying', name:"Everyone's Buying Something", tier:'quality',
-   line:'India is shopping — these are the counters ringing up the bill.'},
-  {id:'wiring', name:'The Ones Doing the Wiring', tier:'quality',
-   line:'Every factory, data centre and grid upgrade runs through somebody. These are the somebodies.'}
-];
+/* ---------- tiny utils ---------- */
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function prng(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const fmtR=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function hexRGB(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]}
+function mixHex(a,b,t){const A=hexRGB(a),B=hexRGB(b);return`rgb(${Math.round(lerp(A[0],B[0],t))},${Math.round(lerp(A[1],B[1],t))},${Math.round(lerp(A[2],B[2],t))})`}
+const haptic=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* fields: sym, name, coll, price, pg (profit growth % yoy), debt (low/ok/heavy),
-   margin (up/flat/down), pos (0-1 within 52w), mom (-1..1), vflag (volatility),
-   ctx (macro line), bull, bear, risk, cat (catalyst), spark (8 pts) */
-const STOCKS = [
- // quiet
- {sym:'PIDILITIND',name:'Pidilite Industries',coll:'quiet',price:3120,pg:16,debt:'low',margin:'up',pos:.62,mom:.3,vflag:false,
-  ctx:'The Fevicol company — adhesives are boring until you notice the margins.',
-  bull:'Category monopoly with pricing power; rural demand recovering.',bear:'Rich valuation leaves little room for a slow quarter.',
-  risk:'Crude-linked input costs squeezing margins.',cat:'Rural volume growth re-accelerating.',spark:[2960,2990,3040,3010,3060,3095,3110,3120]},
- {sym:'ASTRAL',name:'Astral Ltd',coll:'quiet',price:1485,pg:14,debt:'low',margin:'flat',pos:.44,mom:.1,vflag:false,
-  ctx:'Pipes and adhesives riding every new bathroom built in India.',
-  bull:'Housing cycle tailwind; brand premium in a commodity category.',bear:'PVC price swings can dent a quarter without warning.',
-  risk:'Real-estate slowdown hits volumes.',cat:'New adhesives plant scaling up.',spark:[1440,1460,1450,1478,1465,1472,1480,1485]},
- {sym:'POLYCAB',name:'Polycab India',coll:'quiet',price:7050,pg:22,debt:'low',margin:'up',pos:.71,mom:.5,vflag:false,
-  ctx:'Wires and cables — the picks-and-shovels of the capex boom.',
-  bull:'Market leader in a sector growing 15%+ with the grid buildout.',bear:'Competition from Adani entry could pressure pricing.',
-  risk:'Copper price spikes compress margins.',cat:'Data-centre electrification orders.',spark:[6600,6720,6800,6850,6920,6980,7010,7050]},
- {sym:'KEI',name:'KEI Industries',coll:'quiet',price:4180,pg:19,debt:'low',margin:'up',pos:.58,mom:.35,vflag:false,
-  ctx:'The smaller, faster-growing cousin in the same wiring boom.',
-  bull:'Capacity expansion landing exactly as demand peaks.',bear:'Smaller scale means less pricing power than Polycab.',
-  risk:'Execution slippage on new capacity.',cat:'EHV cable capacity coming online.',spark:[3980,4020,4060,4100,4090,4140,4160,4180]},
- // glowup
- {sym:'TATAMOTORS',name:'Tata Motors',coll:'glowup',price:1010,pg:28,debt:'ok',margin:'up',pos:.55,mom:.2,vflag:true,
-  ctx:'From debt-laden laggard to near-zero net auto debt in three years.',
-  bull:'JLR margins holding; India EV leadership; balance sheet fixed.',bear:'Global luxury demand is softening; EV competition rising.',
-  risk:'JLR demand dip in China/Europe.',cat:'Demerger unlocking CV/PV value.',spark:[940,965,980,1002,988,996,1005,1010]},
- {sym:'IDFCFIRSTB',name:'IDFC First Bank',coll:'glowup',price:82,pg:31,debt:'ok',margin:'up',pos:.48,mom:.15,vflag:true,
-  ctx:'A infra lender rebuilt into a retail bank, one quarter at a time.',
-  bull:'Deposit franchise compounding; legacy book almost run off.',bear:'Cost-to-income still high vs. peer banks.',
-  risk:'Microfinance stress lingering longer than guided.',cat:'ROE crossing the 13% threshold.',spark:[74,76,78,80,79,81,81.5,82]},
- {sym:'ETERNAL',name:'Eternal (Zomato)',coll:'glowup',price:305,pg:45,debt:'low',margin:'up',pos:.66,mom:.6,vflag:true,
-  ctx:'The cash-burner that learned to make money — now Blinkit is the story.',
-  bull:'Quick commerce winner-takes-most, and it is winning.',bear:'Blinkit expansion burns cash exactly when competition peaks.',
-  risk:'Instamart/Zepto discount war reigniting.',cat:'Blinkit turning contribution-positive in new cities.',spark:[268,275,284,290,286,296,300,305]},
- {sym:'SUZLON',name:'Suzlon Energy',coll:'glowup',price:68,pg:52,debt:'ok',margin:'up',pos:.51,mom:.4,vflag:true,
-  ctx:'Left for dead, refinanced, and back with a record order book.',
-  bull:'Wind capex cycle turning; debt resolved; orders at all-time high.',bear:'Execution history is patchy — orders must become revenue.',
-  risk:'Project delays pushing revenue right.',cat:'Quarterly execution run-rate stepping up.',spark:[59,61,63,65,64,66,67,68]},
- // oldmoney
- {sym:'ITC',name:'ITC Ltd',coll:'oldmoney',price:465,pg:9,debt:'low',margin:'flat',pos:.4,mom:-.1,vflag:false,
-  ctx:'Cigarette cash machine funding a serious FMCG second act.',
-  bull:'Hotels demerged, FMCG margins inching up, 3%+ dividend yield.',bear:'Core cigarette volumes grow slowly at best.',
-  risk:'Tax shocks on tobacco in any budget.',cat:'FMCG margin crossing double digits.',spark:[472,470,468,466,469,464,466,465]},
- {sym:'M&M',name:'Mahindra & Mahindra',coll:'oldmoney',price:3350,pg:20,debt:'low',margin:'up',pos:.78,mom:.55,vflag:false,
-  ctx:'Tractors paid the bills while SUVs became the main character.',
-  bull:'SUV order backlog plus farm-cycle recovery — twin engines.',bear:'EV investments are heavy and returns are years out.',
-  risk:'Monsoon disappointment hits tractor demand.',cat:'New SUV launches sustaining waitlists.',spark:[3080,3150,3200,3260,3240,3300,3330,3350]},
- {sym:'TITAN',name:'Titan Company',coll:'oldmoney',price:3720,pg:12,debt:'low',margin:'flat',pos:.52,mom:.1,vflag:false,
-  ctx:'The Tata house of jewellery — where gold prices meet brand trust.',
-  bull:'Wedding demand is structural; market share keeps shifting formal.',bear:'High gold prices pinch volumes even as value grows.',
-  risk:'Gold volatility distorting demand.',cat:'Studded-jewellery mix improving margins.',spark:[3580,3620,3660,3700,3680,3705,3710,3720]},
- {sym:'HDFCBANK',name:'HDFC Bank',coll:'oldmoney',price:1990,pg:11,debt:'low',margin:'flat',pos:.69,mom:.25,vflag:false,
-  ctx:'The merger digestion is ending — the elephant wants to dance again.',
-  bull:'Deposit growth normalising; best-in-class asset quality.',bear:'Size means growth can only be so fast.',
-  risk:'NIM pressure if rate cuts run deep.',cat:'Loan growth re-matching deposit growth.',spark:[1880,1905,1930,1950,1945,1970,1980,1990]},
- // defence
- {sym:'HAL',name:'Hindustan Aeronautics',coll:'defence',price:4820,pg:24,debt:'low',margin:'up',pos:.6,mom:.45,vflag:true,
-  ctx:'India builds its own fighter jets now — this is who builds them.',
-  bull:'Decade-long order visibility; engine supply issues easing.',bear:'Execution depends on GE engine deliveries it does not control.',
-  risk:'Engine supply delays stalling Tejas deliveries.',cat:'Tejas Mk1A delivery ramp.',spark:[4450,4550,4620,4700,4660,4740,4790,4820]},
- {sym:'BEL',name:'Bharat Electronics',coll:'defence',price:405,pg:26,debt:'low',margin:'up',pos:.72,mom:.6,vflag:true,
-  ctx:'Radars, missiles electronics, and a near-monopoly customer relationship.',
-  bull:'Highest-quality defence PSU: margins, cash, order book all strong.',bear:'Valuation already prices years of flawless execution.',
-  risk:'Order inflow lumpy quarter to quarter.',cat:'QRSAM production order landing.',spark:[368,376,384,392,388,398,402,405]},
- {sym:'BDL',name:'Bharat Dynamics',coll:'defence',price:1560,pg:30,debt:'low',margin:'up',pos:.45,mom:.2,vflag:true,
-  ctx:'The missile maker — smaller, spikier, pure-play on munitions demand.',
-  bull:'Munitions restocking is a global theme and India is no exception.',bear:'Revenue concentration in a handful of programs.',
-  risk:'Supply-chain gaps in propellants/electronics.',cat:'Export clearances for Akash systems.',spark:[1490,1510,1535,1550,1528,1545,1552,1560]},
- {sym:'MAZDOCK',name:'Mazagon Dock',coll:'defence',price:3150,pg:35,debt:'low',margin:'up',pos:.68,mom:.65,vflag:true,
-  ctx:'Submarines take a decade to build — the order book reads like one.',
-  bull:'P-75I submarine program is a multi-year revenue lock-in.',bear:'Shipbuilding margins are famously hard to sustain.',
-  risk:'Margin normalisation from one-off highs.',cat:'Next submarine contract signature.',spark:[2850,2940,3000,3080,3020,3090,3120,3150]},
- // buying
- {sym:'TRENT',name:'Trent Ltd',coll:'buying',price:6200,pg:38,debt:'low',margin:'up',pos:.58,mom:.4,vflag:true,
-  ctx:'Zudio made fast fashion profitable in India. Nobody else has.',
-  bull:'Store economics so good expansion funds itself.',bear:'Growth priced to perfection — any slowdown gets punished.',
-  risk:'Same-store growth cooling as base expands.',cat:'Zudio beauty format scaling.',spark:[5800,5900,6000,6100,6040,6120,6160,6200]},
- {sym:'DMART',name:'Avenue Supermarts',coll:'buying',price:4450,pg:13,debt:'low',margin:'flat',pos:.38,mom:-.05,vflag:false,
-  ctx:'DMart — the everyday-low-prices machine grinding out store after store.',
-  bull:'Unmatched cost discipline; quick-commerce fears look overdone.',bear:'Online grocery is a real structural threat to footfall.',
-  risk:'Quick commerce eating urban basket share.',cat:'DMart Ready reacceleration.',spark:[4560,4520,4490,4470,4480,4455,4460,4450]},
- {sym:'NYKAA',name:'Nykaa (FSN)',coll:'buying',price:215,pg:34,debt:'low',margin:'up',pos:.64,mom:.5,vflag:true,
-  ctx:'Beauty is the fastest-compounding shelf in Indian retail.',
-  bull:'Category leadership plus improving profitability, finally together.',bear:'Fashion vertical still burns; competition from q-commerce.',
-  risk:'Marketing spend creeping back up.',cat:'Beauty EBITDA margin expansion.',spark:[196,200,205,209,206,211,213,215]},
- {sym:'VBL',name:'Varun Beverages',coll:'buying',price:520,pg:21,debt:'ok',margin:'up',pos:.35,mom:-.15,vflag:false,
-  ctx:'Every Pepsi in half of India (and now Africa) flows through them.',
-  bull:'Africa expansion replays the India playbook from year one.',bear:'A bad summer is literally a bad year for volumes.',
-  risk:'Unseasonal rains denting peak-season sales.',cat:'Africa territories turning profitable.',spark:[545,538,532,528,530,524,522,520]},
- // wiring
- {sym:'ABB',name:'ABB India',coll:'wiring',price:5450,pg:18,debt:'low',margin:'up',pos:.42,mom:.05,vflag:false,
-  ctx:'Automation and electrification — selling shovels to every capex story.',
-  bull:'Order inflows diversified across data centres, rail, renewables.',bear:'Valuation assumes the capex cycle never pauses.',
-  risk:'Private capex deferrals in an election-adjacent year.',cat:'Data-centre order announcements.',spark:[5300,5350,5390,5420,5400,5430,5440,5450]},
- {sym:'SIEMENS',name:'Siemens India',coll:'wiring',price:3080,pg:15,debt:'low',margin:'flat',pos:.4,mom:0,vflag:false,
-  ctx:'The grid, the trains, the factories — Siemens wires all three.',
-  bull:'Energy business demerger sharpens the growth story.',bear:'Slower quarters get magnified at this valuation.',
-  risk:'Project-heavy mix delaying margin gains.',cat:'Post-demerger re-rating of energy arm.',spark:[3010,3030,3050,3070,3055,3068,3075,3080]},
- {sym:'CGPOWER',name:'CG Power',coll:'wiring',price:740,pg:27,debt:'low',margin:'up',pos:.56,mom:.35,vflag:true,
-  ctx:'A governance-scandal survivor now riding the transformer shortage.',
-  bull:'Global transformer shortage means pricing power for years.',bear:'Semiconductor JV is a big bet outside core competence.',
-  risk:'OSAT venture absorbing cash and focus.',cat:'Transformer capacity expansion commissioning.',spark:[690,700,712,725,718,730,736,740]},
- {sym:'CUMMINSIND',name:'Cummins India',coll:'wiring',price:3620,pg:17,debt:'low',margin:'up',pos:.5,mom:.2,vflag:false,
-  ctx:'Every data centre needs backup power. That is a genset. That is Cummins.',
-  bull:'Data-centre genset demand is a structural, not cyclical, wave.',bear:'Emission-norm transitions can create air-pocket quarters.',
-  risk:'CPCB-V transition disrupting order timing.',cat:'Hyperscaler data-centre wins.',spark:[3480,3520,3550,3580,3560,3595,3610,3620]}
-];
-
-/* ---------------- price feed (DEMO: seeded random walk) ---------------- */
-const PriceFeed = (()=>{
-  function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-  function advance(prices, day){
-    const out = {};
-    for(const s of STOCKS){
-      const rnd = mulberry(day*7919 + s.sym.length*131 + s.sym.charCodeAt(0)*17)();
-      const drift = s.mom*0.004 + (s.pg-15)*0.00012;
-      const vol = s.vflag? 0.028 : 0.014;
-      const shock = (rnd-0.5)*2*vol;
-      out[s.sym] = +( (prices[s.sym]||s.price) * (1+drift+shock) ).toFixed(2);
-    }
-    return out;
-  }
-  return {advance};
-})();
-/* ---------------- app state ---------------- */
-let S = {
-  goal:null,            // {name, target, months, riskPct}
-  positions:[],         // open
-  closed:[],            // resolved with verdicts
-  viewed:{},            // collId -> [syms] (persistent view-count, see build note)
-  nudged:{},            // collId -> bool (don't re-nudge same collection)
-  day:0,
-  prices:{},
-  view:'home', coll:null, cardIdx:0
+/* ---------- sectors & palettes ---------- */
+const SECTORS={
+  fin:   {label:'banks & money',      c:'#A8C8E8'},
+  it:    {label:'software',           c:'#C7BCE6'},
+  energy:{label:'oil & energy',       c:'#F5CBA0'},
+  fmcg:  {label:'kitchen & shelf',    c:'#F7E39B'},
+  auto:  {label:'wheels',             c:'#E8B7B0'},
+  pharma:{label:'health',             c:'#ABDDBA'},
+  metal: {label:'metals & mines',     c:'#CBC3B3'},
+  retail:{label:'shops & style',      c:'#F5BBD4'},
+  infra: {label:'builders & machines',c:'#E3D3AE'},
+  telecom:{label:'signal & screen',   c:'#AFD8D2'},
+  net:   {label:'the internet crowd', c:'#F5B9A8'},
 };
-const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
-const pct = n => (n>0?'+':'') + n.toFixed(1) + '%';
-const byId = id => document.getElementById(id);
-const stock = sym => STOCKS.find(s=>s.sym===sym);
-const price = sym => S.prices[sym] || stock(sym).price;
-const collOf = id => COLLECTIONS.find(c=>c.id===id);
-const deployed = () => S.positions.reduce((a,p)=>a+p.amount,0);
-const curValue = () => S.positions.reduce((a,p)=>a+p.amount*(price(p.sym)/p.entry),0);
-const realized = () => S.closed.reduce((a,p)=>a+p.proceeds,0) - S.closed.reduce((a,p)=>a+p.amount,0);
-async function persist(){ await Store.save(S); }
-function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-
-/* ---------------- pulse glyphs ---------------- */
-function rangebar(pos){ return `<div class="rangebar" role="img" aria-label="trading at ${(pos*100)|0}% of its 52-week range"><span class="pin" style="left:${(pos*100).toFixed(0)}%"></span></div>`; }
-function arcGlyph(m){ // momentum as directional arc, -1..1
-  const col = m>0.05?'var(--up)':(m<-0.05?'var(--down)':'var(--muted)');
-  const sweep = Math.abs(m);
-  const y2 = 16 - m*10;
-  return `<svg class="arc" width="46" height="22" viewBox="0 0 46 22" aria-label="momentum ${m>0?'up':m<0?'down':'flat'}"><path d="M4 ${16+ (m<0? -m*6:0)} Q 23 ${16 - m*22} 42 ${y2}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linecap="round" opacity="${0.5+sweep*0.5}"/><circle cx="42" cy="${y2}" r="2.6" fill="${col}"/></svg>`;
-}
-function sparkline(pts, w=110, h=30){
-  const mn=Math.min(...pts), mx=Math.max(...pts), rg=(mx-mn)||1;
-  const step=w/(pts.length-1);
-  const d=pts.map((p,i)=>`${i?'L':'M'}${(i*step).toFixed(1)} ${(h-3-((p-mn)/rg)*(h-6)).toFixed(1)}`).join(' ');
-  const up = pts[pts.length-1]>=pts[0];
-  return `<svg class="sline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${up?'var(--up)':'var(--down)'}" stroke-width="2" stroke-linecap="round"/></svg>`;
-}
-function debtLabel(d){return d==='low'?'barely any debt':d==='ok'?'debt under control':'carrying real debt'}
-function marginGlyph(m){return m==='up'?'<span class="up">▲ widening</span>':m==='down'?'<span class="down">▼ shrinking</span>':'<span style="color:var(--muted)">— steady</span>'}
-
-/* ---------------- shell / router ---------------- */
-const ICONS = {
-  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 6v11a1 1 0 01-1 1h-5v-6h-4v6H5a1 1 0 01-1-1V9z"/></svg>',
-  disc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',
-  port:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 4-6"/></svg>'
+const SAND='#E7DDC6';
+const MODES={
+  sector:{name:'sector',axis:false,groups:Object.keys(SECTORS),
+    label:k=>SECTORS[k].label,color:k=>SECTORS[k].c,of:c=>c.sector},
+  strength:{name:'strength',axis:true,groups:['run','steady','cool'],
+    label:k=>({run:'on a run',steady:'steady',cool:'cooling'})[k],
+    color:k=>({run:'#E89A6F',steady:SAND,cool:'#B9C7D6'})[k],of:c=>sig(c).strength},
+  price:{name:'price',axis:true,groups:['cheap','fair','pricey'],
+    label:k=>({cheap:'going cheap',fair:'fair',pricey:'pricey'})[k],
+    color:k=>({cheap:'#8FC7B0',fair:SAND,pricey:'#E9A9B8'})[k],of:c=>sig(c).price},
+  money:{name:'big money',axis:true,groups:['in','quiet','out'],
+    label:k=>({in:'foreign money in',quiet:'quiet',out:'foreign money out'})[k],
+    color:k=>({in:'#B3B7E8',quiet:SAND,out:'#CFC7BB'})[k],of:c=>sig(c).money},
+  size:{name:'size',axis:true,groups:['giant','mid','small'],
+    label:k=>({giant:'the giants',mid:'the middle',small:'the small print'})[k],
+    color:k=>({giant:'#D9B98C',mid:'#E8D6B2',small:'#F1E7CF'})[k],of:c=>c.sizeBand},
 };
-function render(){
-  const app = byId('app');
-  let html='';
-  if(!S.goal){ html = viewOnboard(); }
-  else if(S.view==='home') html = viewHome();
-  else if(S.view==='discover') html = viewDiscover();
-  else if(S.view==='collection') html = viewCollection();
-  else if(S.view==='portfolio') html = viewPortfolio();
-  app.innerHTML = html + (S.goal? navHtml():'');
-  wire();
-}
-function navHtml(){
-  const t=(k)=>S.view===k||(k==='discover'&&S.view==='collection')?'on':'';
-  return `<nav class="nav" aria-label="Main">
-    <button class="${t('home')}" data-nav="home">${ICONS.home}Goal</button>
-    <button class="${t('discover')}" data-nav="discover">${ICONS.disc}Discover</button>
-    <button class="${t('portfolio')}" data-nav="portfolio">${ICONS.port}Portfolio</button>
-  </nav>`;
-}
-function go(v){ S.view=v; persist(); render(); window.scrollTo(0,0); }
-function toast(msg){
-  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
-  document.body.appendChild(t); setTimeout(()=>t.remove(), 2600);
-}
+const MODEKEYS=['sector','strength','price','money','size'];
 
-/* ---------------- onboarding: create the goal ---------------- */
-function viewOnboard(){
-  return `<div class="view" style="display:flex;flex-direction:column;justify-content:center;min-height:100dvh;padding-bottom:40px">
-    <p class="brand" style="font-size:26px">hunch<em>.</em></p>
-    <h1 style="font-size:34px;line-height:1.15;margin:18px 0 10px">What are you<br><span class="script" style="color:var(--brass)">playing for?</span></h1>
-    <p class="small" style="margin-bottom:26px">Set a target. Every pick you make fills it — or doesn't. Virtual money, real market prices, your calls.</p>
-    <label class="eyebrow" for="gname">The goal</label>
-    <div class="row" style="flex-wrap:wrap;gap:8px;margin:8px 0 14px">
-      <button class="chip gsug">Goa fund</button><button class="chip gsug">Emergency cushion</button><button class="chip gsug">Beat the index</button><button class="chip gsug">New laptop</button>
-    </div>
-    <input id="gname" placeholder="Name it — e.g. Bali, December" style="margin-bottom:14px" maxlength="40">
-    <label class="eyebrow" for="gamt">Target amount</label>
-    <input id="gamt" type="number" inputmode="numeric" placeholder="50000" style="margin:8px 0 14px">
-    <label class="eyebrow" for="gmo">Timeframe</label>
-    <div class="row" style="gap:8px;margin:8px 0 22px">
-      <button class="chip mo" data-m="3">3 months</button>
-      <button class="chip mo on" data-m="6">6 months</button>
-      <button class="chip mo" data-m="12">12 months</button>
-    </div>
-    <button class="btn btn-primary" id="gmk" disabled>Set the goal</button>
-    <p class="tiny" style="margin-top:14px;text-align:center">Your risk budget sets itself: max 25% of this goal in any single pick — a nudge, never a wall.</p>
-  </div>`;
-}
-
-/* ---------------- home: goal meter ---------------- */
-function goalMeter(previewAmt=0){
-  const t=S.goal.target, val=curValue()+realized(), dep=deployed();
-  const fillPct=Math.min(100,(val/t)*100), ghostPct=Math.min(100,((val+previewAmt)/t)*100);
-  return `<div class="vessel" role="img" aria-label="goal ${fillPct.toFixed(0)}% filled">
-    <span class="ghost" style="width:${ghostPct}%"></span>
-    <span class="fill" style="width:${fillPct}%"></span>
-  </div>
-  <div class="spread" style="margin-top:8px">
-    <span class="small"><span class="mono" style="color:var(--text)">${fmt(val)}</span> working</span>
-    <span class="tiny mono">${fmt(t)}</span>
-  </div>`;
-}
-function viewHome(){
-  const g=S.goal, open=S.positions.length, dep=deployed(), val=curValue(), pl=val-dep;
-  const pldisp = dep>0? `<span class="${pl>=0?'up':'down'} mono">${pl>=0?'+':''}${fmt(Math.abs(pl)).replace('₹', pl>=0?'₹':'-₹')}</span>`:'';
-  return `<div class="view">
-    <div class="topbar"><span class="brand">hunch<em>.</em></span>
-      <span class="demo-pill">day ${S.day} · demo prices <button id="tick">advance ›</button></span>
-    </div>
-    <p class="eyebrow">${esc(g.months)}-month goal</p>
-    <h1 style="font-size:30px;margin:4px 0 18px" class="script">${esc(g.name)}</h1>
-    ${goalMeter()}
-    <div class="row" style="gap:20px;margin-top:18px">
-      <div class="pair"><span class="term mono" style="font-size:15px">${open}</span><span class="plain">open call${open===1?'':'s'}</span></div>
-      <div class="pair"><span class="term mono" style="font-size:15px">${fmt(dep)}</span><span class="plain">deployed</span></div>
-      ${dep>0?`<div class="pair"><span class="term" style="font-size:15px">${pldisp}</span><span class="plain">unrealised</span></div>`:''}
-    </div>
-    <hr class="hr" style="margin:24px 0">
-    ${open===0 && S.closed.length===0 ? `
-      <div class="card" style="text-align:center;padding:34px 20px">
-        <p class="script" style="font-size:20px;margin-bottom:8px">Nothing's caught your eye yet.</p>
-        <p class="small" style="margin-bottom:20px">Go meet a few stocks. No commitment — you're just browsing.</p>
-        <button class="btn btn-primary" data-nav="discover">Start browsing</button>
-      </div>`
-    : `
-      <p class="eyebrow" style="margin-bottom:12px">Open calls</p>
-      ${S.positions.map(posRow).join('') || '<p class="small">All calls resolved — check Portfolio for verdicts.</p>'}
-      <button class="btn btn-ghost" data-nav="discover" style="margin-top:8px">Browse for the next one</button>`}
-  </div>`;
-}
-function posRow(p){
-  const cur=price(p.sym), ch=((cur/p.entry)-1)*100, s=stock(p.sym);
-  return `<button class="pos" data-pos="${p.id}">
-    <div class="spread">
-      <div><strong>${esc(s.name)}</strong><div class="tiny mono">${p.sym} · in at ${fmt(p.entry)}</div></div>
-      <div style="text-align:right"><span class="mono ${ch>=0?'up':'down'}">${pct(ch)}</span>
-      <div class="tiny">target ${pct(p.thesis.target)} by day ${p.thesis.byDay}</div></div>
-    </div>
-  </button>`;
-}
-/* ---------------- discover ---------------- */
-function viewDiscover(){
-  return `<div class="view">
-    <div class="topbar"><span class="brand">hunch<em>.</em></span></div>
-    <h1 style="font-size:26px;margin-bottom:4px">Who's out there</h1>
-    <p class="small" style="margin-bottom:20px">Six rooms, different energies. The tag tells you what kind of bet you're walking into.</p>
-    ${COLLECTIONS.map(c=>{
-      const n=STOCKS.filter(s=>s.coll===c.id).length;
-      const seen=(S.viewed[c.id]||[]).length;
-      return `<button class="coll" data-coll="${c.id}">
-        <span class="tier ${c.tier}"><span class="dot"></span>${c.tier==='quality'?'steady · fundamentals':'high heat · momentum'}</span>
-        <h2>${esc(c.name)}</h2>
-        <p>${esc(c.line)}</p>
-        <div class="meta"><span class="tiny">${n} stocks${seen?` · ${seen} met`:''}</span><span style="color:var(--brass);font-size:18px">→</span></div>
-      </button>`;
-    }).join('')}
-  </div>`;
-}
-
-/* ---------------- collection: swipeable card stack ---------------- */
-function viewCollection(){
-  const c=collOf(S.coll), list=STOCKS.filter(s=>s.coll===c.id);
-  return `<div class="view" style="padding-left:0;padding-right:0">
-    <div style="padding:0 20px">
-      <div class="topbar"><button class="btn-quiet" data-nav="discover" style="padding:0">‹ Rooms</button>
-        <span class="tier ${c.tier}"><span class="dot"></span>${c.tier==='quality'?'steady':'high heat'}</span></div>
-      <h1 class="script" style="font-size:26px">${esc(c.name)}</h1>
-      <p class="small" style="margin:4px 0 14px">${esc(c.line)}</p>
-    </div>
-    <div class="stack" id="stack">${list.map(stockCard).join('')}</div>
-    <div class="dots" id="dots">${list.map((_,i)=>`<i class="${i===0?'on':''}"></i>`).join('')}</div>
-    <div id="nudgeslot" style="padding:0 20px"></div>
-  </div>`;
-}
-function stockCard(s){
-  const cur=price(s.sym), ch52=s.pos;
-  return `<article class="scard" data-sym="${s.sym}" aria-label="${esc(s.name)}">
-    <div class="spread">
-      <div><strong style="font-size:17px">${esc(s.name)}</strong><div class="tiny mono">${s.sym} · NSE</div></div>
-      <div style="text-align:right"><span class="mono" style="font-size:17px">${fmt(cur)}</span>${sparkline(s.spark.concat([cur]))}</div>
-    </div>
-    <div class="pulse" style="margin-top:8px">
-      <p class="plabel">Fundamentals</p>
-      <div class="statgrid">
-        <div class="pair"><span class="term mono">${pct(s.pg)} YoY profit growth</span><span class="plain">earning ${s.pg}% more than last year</span></div>
-        <div class="pair"><span class="term">${s.debt} leverage</span><span class="plain">${debtLabel(s.debt)}</span></div>
-        <div class="pair"><span class="term">margins ${marginGlyph(s.margin)}</span><span class="plain">keeps ${s.margin==='up'?'more':'the same'} of every rupee earned</span></div>
-      </div>
-      <p class="voice">${s.pg>=20?'Been quietly killing it — the numbers back the story.':s.pg>=12?'Solid, steady, not showing off.':'Grown-up growth. No fireworks, no drama.'}</p>
-    </div>
-    <div class="pulse">
-      <p class="plabel">Price action</p>
-      <div class="spread" style="margin-bottom:6px">
-        <span class="pair"><span class="term">52-week range</span><span class="plain">where it sits vs. its year's high &amp; low</span></span>
-        ${arcGlyph(s.mom)}
-      </div>
-      ${rangebar(s.pos)}
-      <div class="spread" style="margin-top:6px">
-        <span class="tiny">momentum: ${s.mom>0.3?'running hot':s.mom>0.05?'warming up':s.mom<-0.05?'cooling off':'flat'}</span>
-        ${s.vflag?'<span class="tiny" style="color:var(--peri)">◆ swings hard — size accordingly</span>':''}
-      </div>
-    </div>
-    <div class="pulse">
-      <p class="plabel">The context</p>
-      <p style="font-size:14px">${esc(s.ctx)}</p>
-    </div>
-    <button class="btn-quiet casebtn" data-sym="${s.sym}" aria-expanded="false" style="width:100%;text-align:left;padding:10px 0 0;color:var(--brass);font-weight:600;font-size:13.5px">Open the case file ↓</button>
-    <div class="case" id="case-${s.sym}">
-      <div class="kv"><p class="k up">Bull case</p><p class="v">${esc(s.bull)}</p></div>
-      <div class="kv"><p class="k down">Bear case</p><p class="v">${esc(s.bear)}</p></div>
-      <div class="kv"><p class="k" style="color:var(--peri)">The one risk</p><p class="v">${esc(s.risk)}</p></div>
-      <div class="kv"><p class="k" style="color:var(--brass)">The catalyst</p><p class="v">${esc(s.cat)}</p></div>
-    </div>
-    <button class="btn btn-primary callbtn" data-sym="${s.sym}" style="margin-top:16px">Make the call</button>
-  </article>`;
-}
-function maybeNudge(){
-  const cid=S.coll, seen=S.viewed[cid]||[];
-  if(seen.length>=3 && !S.nudged[cid]){
-    S.nudged[cid]=true; persist();
-    const c=collOf(cid);
-    const slot=byId('nudgeslot');
-    if(slot) slot.innerHTML=`<div class="nudge" role="status">
-      <p>You've met <strong>${seen.length}</strong> in ${esc(c.name)} — want to see them side by side?</p>
-      <button id="cmpbtn">Stack them up →</button></div>`;
-    const b=byId('cmpbtn'); if(b) b.onclick=()=>openCompare(cid);
-  }
-}
-function openCompare(cid){
-  const syms=(S.viewed[cid]||[]); const c=collOf(cid);
-  openSheet(`
-    <p class="eyebrow" style="margin-bottom:4px">Side by side</p>
-    <h2 class="script" style="font-size:22px;margin-bottom:14px">${esc(c.name)}</h2>
-    <table class="cmp"><thead><tr><th>Stock</th><th>Profit ↑</th><th>52w spot</th><th>Momentum</th></tr></thead><tbody>
-    ${syms.map(sym=>{const s=stock(sym);return `<tr>
-      <td><strong>${s.sym}</strong><div class="tiny mono">${fmt(price(sym))}</div></td>
-      <td class="mono">${pct(s.pg)}</td>
-      <td style="min-width:80px">${rangebar(s.pos)}</td>
-      <td>${arcGlyph(s.mom)}</td></tr>`}).join('')}
-    </tbody></table>
-    <p class="tiny" style="margin-top:14px">Same jargon, plain reading: profit ↑ = how much more it earns than a year ago; 52w spot = where price sits in its yearly range.</p>
-    <button class="btn btn-ghost" style="margin-top:16px" onclick="closeSheet()">Back to browsing</button>
-  `);
-}
-/* ---------------- sheet infra ---------------- */
-function openSheet(inner){
-  closeSheet();
-  const v=document.createElement('div'); v.className='sheet-veil'; v.id='veil';
-  v.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${inner}</div>`;
-  v.addEventListener('click',e=>{ if(e.target===v) closeSheet(); });
-  document.body.appendChild(v);
-}
-function closeSheet(){ const v=byId('veil'); if(v) v.remove(); }
-
-/* ---------------- thesis → size → confirm flow ---------------- */
-const REASONS=[
-  {k:'fundamentals',label:'The numbers',plain:'profits, margins, balance sheet'},
-  {k:'momentum',label:'The move',plain:'price trend, market interest'},
-  {k:'story',label:'The story',plain:'sector theme, catalyst, narrative'}
+/* ---------- the universe (demo slice of the Nifty Total Market) ----------
+   [symbol, name, sector, index weight ~%, temperament, identity line, aliases]
+   temperament: calm | steady | lively                                     */
+const RAW=[
+['RELIANCE','Reliance','energy',9.2,'steady','Oil and gas paying for everything else — telecom, retail, and whatever India does next.',['jio','tira','ajio']],
+['HDFCBANK','HDFC Bank','fin',8.6,'calm','The bank India trusts with its salary account. Careful, enormous, a little boring on purpose.'],
+['ICICIBANK','ICICI Bank','fin',5.4,'steady','The big private bank that got its act together — lending carefully and liking it.'],
+['INFY','Infosys','it',3.8,'calm','Writes and runs software for the world\u2019s big companies. India\u2019s original tech export story.'],
+['BHARTIARTL','Bharti Airtel','telecom',3.4,'steady','One of the two phone networks nearly everyone in India is on.',['airtel']],
+['TCS','TCS','it',3.3,'calm','The Tata software giant. Steady contracts, steady dividends, very few surprises.'],
+['ITC','ITC','fmcg',2.6,'calm','Cigarettes fund an empire of biscuits, atta, hotels and notebooks.',['aashirvaad','sunfeast']],
+['LT','Larsen & Toubro','infra',2.6,'steady','Builds the big things — metros, airports, refineries. When India constructs, she bills.',['l&t']],
+['SBIN','State Bank of India','fin',2.4,'steady','The government\u2019s own giant bank — a branch in every town that has a road.',['sbi']],
+['AXISBANK','Axis Bank','fin',2.0,'steady','The third big private bank, always chasing the top two.'],
+['KOTAKBANK','Kotak Bank','fin',1.9,'calm','A banker\u2019s bank — famously careful about who it lends to.',['kotak']],
+['HINDUNILVR','Hindustan Unilever','fmcg',1.8,'calm','Dove, Surf, Lakmé, Horlicks — she probably owns half your bathroom shelf.',['hul','dove','surf excel','lakme']],
+['M&M','Mahindra & Mahindra','auto',1.7,'steady','SUVs and tractors — Thars for the city, Arjuns for the farm.',['mahindra','thar','scorpio']],
+['BAJFINANCE','Bajaj Finance','fin',1.6,'lively','Lends for phones, fridges and holidays — EMI India runs through her.'],
+['SUNPHARMA','Sun Pharma','pharma',1.5,'steady','India\u2019s biggest medicine maker, selling in a hundred countries.'],
+['NTPC','NTPC','energy',1.3,'calm','The country\u2019s largest power producer — mostly coal, adding sun.'],
+['HCLTECH','HCL Tech','it',1.3,'calm','The quieter software major — engineering-heavy, dividend-friendly.'],
+['MARUTI','Maruti Suzuki','auto',1.3,'steady','Every third car on an Indian road is hers. Small cars built her; SUVs keep her.',['maruti','swift','brezza']],
+['TATAMOTORS','Tata Motors','auto',1.2,'lively','Trucks at home, Jaguars and Range Rovers abroad — two very different moods in one company.',['jlr','jaguar','nexon']],
+['TITAN','Titan','retail',1.2,'steady','Started with watches, became India\u2019s jeweller. Tanishq is the engine.',['tanishq','fastrack','caratlane']],
+['ULTRACEMCO','UltraTech','infra',1.1,'steady','India\u2019s largest cement maker — every boom in building runs through her kilns.'],
+['POWERGRID','Power Grid','energy',1.0,'calm','Owns the wires. Power flows, she collects a toll — rain or shine.'],
+['ADANIPORTS','Adani Ports','infra',0.9,'lively','Runs the ports where India\u2019s trade lands — a toll booth on globalisation.'],
+['ASIANPAINT','Asian Paints','fmcg',0.9,'steady','The paint on most Indian walls, and a distribution machine rivals study in b-school.'],
+['BAJAJFINSV','Bajaj Finserv','fin',0.9,'steady','The holding house over Bajaj\u2019s lending and insurance engines.'],
+['COALINDIA','Coal India','metal',0.8,'calm','Digs most of India\u2019s coal. Unfashionable, and pays fat dividends about it.'],
+['NESTLEIND','Nestlé India','fmcg',0.8,'calm','Maggi, KitKat, Nescafé — small indulgences, enormous business.',['maggi','kitkat','nescafe']],
+['WIPRO','Wipro','it',0.7,'calm','The Bengaluru software old-timer, forever mid-turnaround.'],
+['TATASTEEL','Tata Steel','metal',0.7,'lively','Steel — a century old, and still hostage to world prices.'],
+['ONGC','ONGC','energy',0.7,'calm','Drills India\u2019s own oil and gas. Moves when crude does.'],
+['GRASIM','Grasim','infra',0.6,'steady','The Birla flagship — cement, chemicals, and now paints too.'],
+['HINDALCO','Hindalco','metal',0.6,'lively','Aluminium here, Novelis abroad — cans, cars and cables.'],
+['JSWSTEEL','JSW Steel','metal',0.6,'lively','The aggressive steelmaker, always building the next plant.'],
+['DRREDDY','Dr Reddy\u2019s','pharma',0.6,'steady','Generic medicines for the world, with America the big market.'],
+['TECHM','Tech Mahindra','it',0.5,'steady','Telecom-heavy software services, working on a reinvention.'],
+['CIPLA','Cipla','pharma',0.6,'steady','The respiratory-medicine specialist with a famously long memory for doing good.'],
+['ADANIENT','Adani Enterprises','infra',0.6,'lively','The Adani incubator — airports, mining, new energy, whatever\u2019s next.'],
+['BRITANNIA','Britannia','fmcg',0.5,'calm','Good Day, Marie Gold, NutriChoice — the biscuit tin of the nation.',['good day','marie gold']],
+['EICHERMOT','Eicher Motors','auto',0.5,'steady','Royal Enfield — the motorcycle people buy with their heart.',['royal enfield','bullet']],
+['DIVISLAB','Divi\u2019s Labs','pharma',0.5,'steady','Makes the raw ingredients inside the world\u2019s medicines.'],
+['APOLLOHOSP','Apollo Hospitals','pharma',0.5,'steady','India\u2019s biggest hospital chain, with pharmacies on every third corner.',['apollo']],
+['HEROMOTOCO','Hero MotoCorp','auto',0.4,'steady','The world\u2019s largest motorcycle maker by count — the Splendor is the workhorse of India.',['splendor']],
+['INDUSINDBK','IndusInd Bank','fin',0.4,'lively','A mid-size private bank with a taste for vehicle loans.'],
+['BAJAJ-AUTO','Bajaj Auto','auto',0.5,'steady','Pulsar at home, boxer bikes across Africa — exports are half her story.',['pulsar']],
+['SHRIRAMFIN','Shriram Finance','fin',0.4,'steady','Lends against used trucks — banking for the India banks skip.'],
+['LTIM','LTIMindtree','it',0.4,'steady','The merged mid-size software player finding its combined voice.'],
+['BPCL','BPCL','energy',0.4,'steady','Petrol pumps and refineries — margins move when oil politics do.'],
+['TRENT','Trent','retail',0.5,'lively','Westside upstairs, Zudio everywhere — Tata\u2019s fashion machine that made cheap look good.',['zudio','westside','zara']],
+['HDFCLIFE','HDFC Life','fin',0.4,'steady','Life insurance with the HDFC name on the door.'],
+['SBILIFE','SBI Life','fin',0.4,'steady','Life insurance sold through the country\u2019s biggest bank branch network.'],
+['ETERNAL','Eternal (Zomato)','net',0.6,'lively','Zomato brings dinner; Blinkit brings everything else in ten minutes.',['zomato','blinkit']],
+['SWIGGY','Swiggy','net',0.3,'lively','The other food-delivery half of India\u2019s duopoly, with Instamart racing Blinkit.',['instamart']],
+['NYKAA','Nykaa','retail',0.2,'lively','Beauty first, fashion second — lipstick, serums and the advice to go with them.',['fsn','dot & key']],
+['PAYTM','Paytm','net',0.2,'lively','The payments app that survived its own drama and is hunting for profit.',['one97']],
+['POLICYBZR','PB Fintech','net',0.2,'lively','Policybazaar — where India comparison-shops its insurance.',['policybazaar']],
+['DELHIVERY','Delhivery','net',0.1,'lively','The parcel network under half of India\u2019s online shopping.'],
+['DMART','DMart','retail',0.5,'calm','Everyday low prices, no frills, and queues that say it\u2019s working.',['avenue supermarts']],
+['JUBLFOOD','Jubilant FoodWorks','retail',0.2,'lively','Domino\u2019s in India — thirty minutes, or the stock sulks.',['dominos','domino\u2019s']],
+['DEVYANI','Devyani International','retail',0.1,'lively','KFC and Pizza Hut across India, one franchise at a time.',['kfc','pizza hut']],
+['PVRINOX','PVR Inox','retail',0.1,'lively','Nearly every multiplex screen in the country — her fortunes track Friday releases.',['pvr','inox']],
+['IRCTC','IRCTC','net',0.2,'steady','The only ticket window for Indian Railways online — a monopoly with chai on the side.'],
+['INDIGO','InterGlobe Aviation','infra',0.5,'lively','IndiGo — more than half of everyone flying in India is on her planes.',['indigo']],
+['VEDL','Vedanta','metal',0.4,'lively','Zinc, aluminium, oil — a commodity cocktail with famous dividends and famous debt.'],
+['PIDILITIND','Pidilite','fmcg',0.5,'calm','Fevicol. The bond that\u2019s a punchline and a moat at once.',['fevicol','fevikwik']],
+['BERGEPAINT','Berger Paints','fmcg',0.2,'steady','The perennial number two in paints, gaining wall by wall.'],
+['HAVELLS','Havells','infra',0.3,'steady','Fans, wires, lights — the electrical brand in most new Indian homes.',['lloyd']],
+['VOLTAS','Voltas','infra',0.2,'lively','The AC people. Summers decide her year.'],
+['BLUESTARCO','Blue Star','infra',0.1,'steady','Air conditioning for homes and server rooms alike.'],
+['DIXON','Dixon Technologies','infra',0.2,'lively','Assembles the phones and TVs other brands put their names on — make-in-India\u2019s poster child.'],
+['POLYCAB','Polycab','infra',0.3,'steady','Wires and cables — the boring backbone of every building boom.'],
+['SIEMENS','Siemens India','infra',0.4,'steady','German engineering for Indian factories and grids.'],
+['ABB','ABB India','infra',0.3,'steady','Automation and electrification — she sells the robots and the switchgear.'],
+['BHEL','BHEL','infra',0.2,'lively','The state power-equipment maker, riding the capex revival.'],
+['BEL','Bharat Electronics','infra',0.5,'steady','Radars and defence electronics — the quiet defence favourite.'],
+['HAL','Hindustan Aeronautics','infra',0.6,'steady','Builds India\u2019s fighter jets and helicopters. Order book measured in decades.'],
+['MAZDOCK','Mazagon Dock','infra',0.2,'lively','Submarines and warships from a Mumbai shipyard.'],
+['COCHINSHIP','Cochin Shipyard','infra',0.1,'lively','Ships and the odd aircraft carrier.'],
+['IRFC','IRFC','fin',0.2,'steady','Lends money to Indian Railways — the railway\u2019s in-house banker.'],
+['RVNL','RVNL','infra',0.2,'lively','Lays railway lines — a pure bet on rail capex.'],
+['ZYDUSLIFE','Zydus Lifesciences','pharma',0.3,'steady','Generics plus a growing consumer-health shelf.'],
+['LUPIN','Lupin','pharma',0.3,'steady','Generic medicines with America as the swing factor.'],
+['AUROPHARMA','Aurobindo Pharma','pharma',0.2,'steady','A volume machine in generic drugs.'],
+['ALKEM','Alkem Labs','pharma',0.2,'steady','Strong at home — the India-first pharma play.'],
+['TORNTPHARM','Torrent Pharma','pharma',0.3,'steady','Branded medicines and a steady hand at acquisitions.'],
+['BIOCON','Biocon','pharma',0.1,'lively','Biosimilars — copies of the world\u2019s most complex drugs.'],
+['MAXHEALTH','Max Healthcare','pharma',0.3,'steady','Premium hospitals in the big metros.'],
+['FORTIS','Fortis Healthcare','pharma',0.2,'steady','The hospital chain that cleaned up its story.'],
+['LALPATHLAB','Dr Lal PathLabs','pharma',0.1,'steady','Blood tests and diagnostics — the north\u2019s lab of habit.',['lal path']],
+['MANKIND','Mankind Pharma','pharma',0.3,'steady','Prega News and everyday medicines for Bharat, not just India.',['prega news']],
+['MARICO','Marico','fmcg',0.3,'calm','Parachute and Saffola — hair oil and heart oil, both habits.',['parachute','saffola']],
+['DABUR','Dabur','fmcg',0.3,'calm','Chyawanprash to Real juice — ayurveda on supermarket shelves.',['real juice']],
+['GODREJCP','Godrej Consumer','fmcg',0.3,'calm','Soaps, hair colour and mosquito coils across India, Indonesia and Africa.',['goodknight','cinthol']],
+['COLPAL','Colgate-Palmolive','fmcg',0.2,'calm','The toothpaste. Literally the word for it in many homes.',['colgate']],
+['EMAMI','Emami','fmcg',0.1,'steady','Boroplus, Navratna — small jars, loyal buyers.'],
+['TATACONSUM','Tata Consumer','fmcg',0.4,'steady','Tata Tea and Salt, plus a push into everything grocery.',['tata tea']],
+['VBL','Varun Beverages','fmcg',0.4,'lively','Bottles Pepsi for a billion thirsty people — summers and new territories drive her.',['pepsi']],
+['UNITDSPR','United Spirits','fmcg',0.2,'steady','McDowell\u2019s to Johnnie Walker — India\u2019s whisky cabinet.',['mcdowell']],
+['UBL','United Breweries','fmcg',0.1,'steady','Kingfisher — most of the beer in most of the fridges.',['kingfisher']],
+['RADICO','Radico Khaitan','fmcg',0.1,'lively','Magic Moments and a fast-premiumising liquor shelf.'],
+['PAGEIND','Page Industries','retail',0.2,'steady','Jockey in India — innerwear as a franchise, loyalty as a moat.',['jockey']],
+['ABFRL','Aditya Birla Fashion','retail',0.1,'lively','Pantaloons, Allen Solly, Louis Philippe — a wardrobe of brands, hunting for profit.',['pantaloons','allen solly']],
+['MANYAVAR','Vedant Fashions','retail',0.1,'steady','Manyavar — the sherwani at nearly every Indian wedding.',['manyavar','mohey']],
+['KALYANKJIL','Kalyan Jewellers','retail',0.2,'lively','Gold showrooms marching across India, one town at a time.',['kalyan']],
+['SENCO','Senco Gold','retail',0.05,'lively','The east\u2019s jeweller, expanding westward.'],
+['METROBRAND','Metro Brands','retail',0.1,'steady','Shoes — Metro, Mochi and Crocs on Indian feet.',['mochi','crocs']],
+['BATAINDIA','Bata India','retail',0.1,'steady','The school-shoe institution, trying to become fashionable.'],
+['RELAXO','Relaxo','retail',0.05,'steady','Slippers for a hundred rupees, worn by half the country.'],
+['SAFARI','Safari Industries','retail',0.05,'lively','The value suitcase riding India\u2019s travel boom.'],
+['WHIRLPOOL','Whirlpool India','infra',0.1,'steady','Fridges and washing machines for the middle-class kitchen.'],
+['CROMPTON','Crompton Greaves CE','infra',0.1,'steady','Fans and pumps — unglamorous, everywhere.'],
+['AMBER','Amber Enterprises','infra',0.1,'lively','Builds the ACs other brands sell.'],
+['ASTRAL','Astral','infra',0.2,'steady','Pipes and adhesives with a brand where none existed.'],
+['SUPREMEIND','Supreme Industries','infra',0.2,'steady','Plastic pipes and furniture — a compounding machine in beige.'],
+['KAJARIACER','Kajaria Ceramics','infra',0.1,'steady','Tiles on Indian floors and walls.'],
+['CENTURYPLY','Century Plyboards','infra',0.05,'steady','Plywood with a warranty — furniture\u2019s quiet supplier.'],
+['TATAPOWER','Tata Power','energy',0.4,'steady','Old coal, new solar, and EV chargers on the side.'],
+['ADANIGREEN','Adani Green','energy',0.3,'lively','Solar and wind farms at a scale that needs a map.'],
+['ADANIPOWER','Adani Power','energy',0.3,'lively','Coal-fired power, bought cheap, run hard.'],
+['JSWENERGY','JSW Energy','energy',0.2,'lively','Power generation with a green pivot underway.'],
+['SUZLON','Suzlon','energy',0.2,'lively','Wind turbines — a comeback story with scars.'],
+['INOXWIND','Inox Wind','energy',0.1,'lively','Wind-turbine maker riding the renewables order boom.'],
+['NHPC','NHPC','energy',0.2,'calm','Hydropower from the Himalayas — slow rivers, slow money.'],
+['SJVN','SJVN','energy',0.1,'steady','Hydro and now solar, state-owned and steady.'],
+['TORNTPOWER','Torrent Power','energy',0.2,'steady','Power distribution done privately and well.'],
+['GAIL','GAIL','energy',0.3,'steady','The country\u2019s gas pipeline network — a toll road for fuel.'],
+['IOC','Indian Oil','energy',0.4,'steady','The biggest refiner and the most petrol pumps.'],
+['HINDPETRO','HPCL','energy',0.2,'steady','Refining and fuel retail, margins set in Delhi and Riyadh.'],
+['PETRONET','Petronet LNG','energy',0.2,'calm','Imports the gas India can\u2019t drill.'],
+['IGL','Indraprastha Gas','energy',0.1,'steady','Piped gas and CNG for Delhi.'],
+['MGL','Mahanagar Gas','energy',0.1,'steady','Mumbai\u2019s gas utility.'],
+['GUJGASLTD','Gujarat Gas','energy',0.1,'steady','Gas for Gujarat\u2019s tile factories and kitchens.'],
+['OIL','Oil India','energy',0.2,'steady','The other state oil driller, in the northeast.'],
+['MUTHOOTFIN','Muthoot Finance','fin',0.3,'steady','Lends against gold — the loan India\u2019s households actually use.'],
+['MANAPPURAM','Manappuram Finance','fin',0.1,'lively','Gold loans with a value price tag.'],
+['CHOLAFIN','Cholamandalam','fin',0.4,'steady','Vehicle and home loans from the Murugappa house.'],
+['LICI','LIC','fin',0.6,'calm','The insurer of the nation — an agent in every family.',['lic']],
+['ICICIPRULI','ICICI Prudential Life','fin',0.2,'steady','Private life insurance, unit-linked heavy.'],
+['ICICIGI','ICICI Lombard','fin',0.2,'steady','Car and health insurance — pricing risk for a living.'],
+['STARHEALTH','Star Health','fin',0.1,'lively','Health insurance for families outside the big metros.'],
+['HDFCAMC','HDFC AMC','fin',0.2,'steady','Runs mutual funds — she earns a slice of everything SIP.'],
+['NAM-INDIA','Nippon AMC','fin',0.1,'steady','India\u2019s big index-fund shop.'],
+['CAMS','CAMS','fin',0.1,'steady','The plumbing behind mutual funds — every SIP passes through her pipes.'],
+['CDSL','CDSL','fin',0.2,'lively','Holds demat accounts — she wins every time a new investor shows up.'],
+['BSE','BSE','fin',0.3,'lively','The exchange itself — volatility is literally her revenue.'],
+['MCX','MCX','fin',0.2,'lively','Where gold and crude futures trade.'],
+['ANGELONE','Angel One','fin',0.1,'lively','A discount broker riding the new-investor wave.'],
+['MOTILALOFS','Motilal Oswal','fin',0.1,'lively','Broking plus its own famous wealth-creation studies.'],
+['PNB','Punjab National Bank','fin',0.3,'steady','A state bank rebuilding trust and margins.'],
+['BANKBARODA','Bank of Baroda','fin',0.3,'steady','The international-flavoured state bank.'],
+['CANBK','Canara Bank','fin',0.3,'steady','Bengaluru\u2019s big state lender.'],
+['UNIONBANK','Union Bank','fin',0.2,'steady','A merged state bank finding scale.'],
+['IDFCFIRSTB','IDFC First Bank','fin',0.2,'lively','A young bank buying growth with high deposit rates.'],
+['FEDERALBNK','Federal Bank','fin',0.2,'steady','Kerala\u2019s bank, quietly national.'],
+['RBLBANK','RBL Bank','fin',0.1,'lively','A small private bank with a credit-card habit.'],
+['BANDHANBNK','Bandhan Bank','fin',0.1,'lively','Microloans turned bank — the east\u2019s lender.'],
+['AUBANK','AU Small Finance Bank','fin',0.2,'lively','A small-finance bank growing like a startup.'],
+['YESBANK','Yes Bank','fin',0.2,'lively','The rescue that\u2019s still convalescing.'],
+['PERSISTENT','Persistent Systems','it',0.2,'steady','Mid-cap software with big-cap growth manners.'],
+['COFORGE','Coforge','it',0.2,'steady','Focused software services punching above its weight.'],
+['MPHASIS','Mphasis','it',0.2,'steady','Software services with a banking tilt.'],
+['KPITTECH','KPIT Technologies','it',0.2,'lively','Writes the software inside tomorrow\u2019s cars.'],
+['TATAELXSI','Tata Elxsi','it',0.2,'lively','Design and engineering for cars and media boxes.'],
+['CYIENT','Cyient','it',0.1,'steady','Engineering services — planes, plants, networks.'],
+['BSOFT','Birlasoft','it',0.05,'steady','A mid-tier services house in turnaround.'],
+['SONATSOFTW','Sonata Software','it',0.05,'steady','Software plus a products distribution arm.'],
+['TANLA','Tanla Platforms','it',0.05,'lively','Every OTP you receive probably crossed her pipes.'],
+['AFFLE','Affle India','net',0.1,'lively','Mobile ads that get apps installed.'],
+['NAZARA','Nazara Technologies','net',0.05,'lively','Gaming and esports — a bet on India playing more.'],
+['NAUKRI','Info Edge','net',0.4,'steady','Naukri for jobs, 99acres for homes, and early cheques into Zomato and Policybazaar.',['naukri','99acres']],
+['JUSTDIAL','Just Dial','net',0.05,'steady','The phone book that went digital and got a Reliance parent.'],
+['MAPMYINDIA','MapmyIndia','net',0.05,'lively','India\u2019s own maps under half your delivery apps.'],
+['RATEGAIN','RateGain','net',0.05,'lively','Pricing software for hotels and airlines.'],
+['HONASA','Honasa (Mamaearth)','retail',0.05,'lively','Mamaearth and a family of young beauty brands born on Instagram.',['mamaearth','derma co']],
+['SULA','Sula Vineyards','fmcg',0.05,'lively','Indian wine, mostly hers.'],
+['BIKAJI','Bikaji Foods','fmcg',0.1,'steady','Bhujia from Bikaner, packaged for everywhere.'],
+['HATSUN','Hatsun Agro','fmcg',0.1,'steady','The south\u2019s milk and ice-cream machine.',['arun icecream']],
+['AWL','AWL Agri (Adani Wilmar)','fmcg',0.1,'steady','Fortune oil in most Indian kitchens.',['fortune oil']],
+['LTFOODS','LT Foods','fmcg',0.05,'steady','Daawat basmati on dinner tables at home and abroad.',['daawat']],
+['KRBL','KRBL','fmcg',0.05,'steady','India Gate basmati — rice as a brand.',['india gate']],
+['VIPIND','VIP Industries','retail',0.05,'lively','Suitcases with legacy, fighting newer bags.'],
+['HYUNDAI','Hyundai Motor India','auto',0.4,'steady','The Creta company — India\u2019s number two carmaker, newly listed.',['creta']],
+['OLAELEC','Ola Electric','auto',0.1,'lively','Electric scooters at startup speed, with startup drama.',['ola']],
+['TVSMOTOR','TVS Motor','auto',0.4,'steady','Scooters and bikes with an EV head start.',['jupiter']],
+['ASHOKLEY','Ashok Leyland','auto',0.2,'lively','Trucks and buses — the economy\u2019s pulse in vehicle form.'],
+['BOSCHLTD','Bosch India','auto',0.2,'steady','The parts inside almost every Indian vehicle.'],
+['MOTHERSON','Samvardhana Motherson','auto',0.3,'lively','Wiring and mirrors for the world\u2019s carmakers.'],
+['UNOMINDA','Uno Minda','auto',0.2,'steady','Horns, lights and switches — a parts compounder.'],
+['EXIDEIND','Exide Industries','auto',0.1,'steady','The battery under India\u2019s hoods, betting on lithium next.'],
+['BALKRISIND','Balkrishna Industries','auto',0.1,'steady','Tyres for tractors and diggers, sold to the world.'],
+['APOLLOTYRE','Apollo Tyres','auto',0.1,'steady','Tyres at home and in Europe.'],
+['ZFCVINDIA','ZF Commercial Vehicle','auto',0.05,'steady','Brakes for India\u2019s trucks.'],
+['NMDC','NMDC','metal',0.2,'steady','Digs iron ore and sets the domestic price.'],
+['SAIL','SAIL','metal',0.2,'lively','The state steelmaker — big, old, cyclical.'],
+['JINDALSTEL','Jindal Steel','metal',0.3,'lively','Steel and power with an expansion streak.'],
+['NATIONALUM','NALCO','metal',0.1,'lively','State-owned aluminium, cash-rich and cyclical.'],
+['HINDZINC','Hindustan Zinc','metal',0.3,'steady','Most of India\u2019s zinc and silver, famous dividends.'],
+['APLAPOLLO','APL Apollo Tubes','metal',0.1,'steady','Steel tubes with a brand — construction\u2019s new skeleton.'],
+['IDEA','Vodafone Idea','telecom',0.1,'lively','The third telecom, surviving on hope and dues deferrals.',['vi','vodafone']],
+['INDUSTOWER','Indus Towers','telecom',0.2,'steady','Owns the towers the networks hang their antennas on.'],
+['TATACOMM','Tata Communications','telecom',0.2,'steady','Undersea cables and enterprise networks.'],
+['HFCL','HFCL','telecom',0.05,'lively','Optical fibre for the 5G build-out.'],
+['ZEEL','Zee Entertainment','telecom',0.1,'lively','TV channels in a streaming world.'],
+['SUNTV','Sun TV','telecom',0.1,'steady','The south\u2019s television empire, plus an IPL team.'],
+['SAREGAMA','Saregama','telecom',0.05,'steady','Owns the old songs every reel borrows.',['carvaan']],
+['PGHH','P&G Hygiene','fmcg',0.1,'calm','Whisper and Vicks — habits with pricing power.',['whisper','vicks']],
+['GILLETTE','Gillette India','fmcg',0.05,'calm','Razors and Oral-B, shaving margins off habit.'],
+['UPL','UPL','fmcg',0.2,'lively','Crop chemicals worldwide, carrying deal debt.'],
+['PIIND','PI Industries','fmcg',0.2,'steady','Makes patented crop chemicals for global majors.'],
+['SRF','SRF','infra',0.3,'steady','Specialty chemicals and packaging films — quiet complexity.'],
+['NAVINFLUOR','Navin Fluorine','infra',0.1,'lively','Fluorine chemistry — small molecules, big margins.'],
+['DEEPAKNTR','Deepak Nitrite','infra',0.1,'lively','Chemicals that go into everything from dyes to plastics.'],
+['AARTIIND','Aarti Industries','infra',0.1,'lively','Benzene chemistry for the world\u2019s supply chains.'],
+['CONCOR','Container Corp','infra',0.2,'steady','Moves containers on rails — trade\u2019s middleman.'],
+['GMRAIRPORT','GMR Airports','infra',0.2,'lively','Runs Delhi and Hyderabad\u2019s airports — every boarding pass pays her.'],
+['IRB','IRB Infrastructure','infra',0.1,'lively','Builds highways, collects tolls.'],
+['KEC','KEC International','infra',0.1,'steady','Strings power lines across continents.'],
+['THERMAX','Thermax','infra',0.1,'steady','Boilers and clean-energy kit for factories.'],
+['CUMMINSIND','Cummins India','infra',0.2,'steady','The engines inside gensets and trucks.'],
+['ABBOTINDIA','Abbott India','pharma',0.2,'calm','Branded medicines with multinational polish.'],
+['GLAXO','GSK Pharma','pharma',0.1,'calm','Vaccines and old trusted brands.'],
+['PFIZER','Pfizer India','pharma',0.1,'calm','The Indian shelf of a global drugmaker.'],
+['SYNGENE','Syngene','pharma',0.1,'steady','Runs research labs for the world\u2019s drug companies.'],
+['LAURUSLABS','Laurus Labs','pharma',0.1,'lively','Ingredients and contract manufacturing, post-ARV pivot.'],
+['GLAND','Gland Pharma','pharma',0.1,'steady','Injectables for regulated markets.'],
+['POONAWALLA','Poonawalla Fincorp','fin',0.1,'lively','Consumer lending with vaccine-family backing.'],
+['360ONE','360 ONE','fin',0.1,'steady','Manages money for India\u2019s newly rich.'],
+['ZOMLIFE','Medi Assist','fin',0.03,'steady','Processes health-insurance claims — the paperwork layer.'],
+['UJJIVANSFB','Ujjivan SFB','fin',0.05,'lively','Small loans, small bank, big reach.'],
+['CEATLTD','CEAT','auto',0.1,'steady','Tyres with a cricket-sponsorship habit.'],
+['KAYNES','Kaynes Technology','infra',0.1,'lively','Electronics manufacturing for everyone building in India.'],
+['SYRMA','Syrma SGS','infra',0.05,'lively','Contract electronics from Chennai.'],
+['CGPOWER','CG Power','infra',0.3,'lively','Motors and transformers, resurrected under Murugappa.'],
+['HITACHIEN','Hitachi Energy','infra',0.1,'lively','Grid technology for the renewables age.'],
+['GESHIP','Great Eastern Shipping','infra',0.05,'steady','Ships oil and dry cargo — freight rates write her story.'],
+['SCI','Shipping Corp','infra',0.05,'lively','The state\u2019s shipping line.'],
+['FLUOROCHEM','Gujarat Fluorochem','infra',0.1,'lively','Fluoropolymers — the Teflon of the energy transition.'],
+['CLEAN','Clean Science','infra',0.05,'steady','Green-chemistry specialist with fat margins.'],
+['ANANDRATHI','Anand Rathi Wealth','fin',0.05,'steady','Wealth advice for the affluent, fee by fee.'],
+['CERA','Cera Sanitaryware','infra',0.05,'steady','Bathrooms of the new Indian home.'],
 ];
-let draft=null;
-function startCall(sym){
-  const s=stock(sym);
-  draft={sym, reasonType:null, reasonText:'', target:10, horizon:63, conviction:null, amount:0};
-  openSheet(thesisStep(s));
-  wireThesis(s);
+
+/* ---------- bespoke tier-1 decks (seed content in the voice register) ----------
+   keys: sells, money, runs, fueling, wrong  (+ optional tell strings)        */
+const DECKS={
+NYKAA:{
+ sells:'Beauty first, fashion second — lipstick, serums and the advice to go with them, online and now in her own stores.',
+ money:'She buys beauty at wholesale, sells it at retail, and keeps the gap. Beauty pays the bills; fashion is still finding its feet.',
+ runs:'Founded by Falguni Nayar, a banker who left at fifty to build this, with family closely involved in running it.',
+ fueling:'India\u2019s beauty budget is growing faster than almost anything else on the shelf, and she\u2019s the name people think of first.',
+ wrong:'Everyone wants her market now — Reliance, Tata, Amazon. Fashion keeps losing money, and richer rivals can outspend her for years.'},
+TRENT:{
+ sells:'Westside upstairs, Zudio everywhere — Tata\u2019s fashion arm that made cheap look genuinely good.',
+ money:'Zudio keeps prices low and racks fast-moving; she earns by selling a lot, quickly, with almost no ads.',
+ runs:'A Tata company, shaped for years by Noel Tata\u2019s patient bets on own-brand retail.',
+ fueling:'Zudio stores have been opening at a pace the rest of retail watches with envy — small towns love a ₹499 find.',
+ wrong:'The price everyone pays for her shares already assumes years of perfect growth. One slow season and the mood can turn hard.'},
+TITAN:{
+ sells:'Started with watches, became India\u2019s jeweller. Tanishq is the engine; Fastrack and CaratLane ride along.',
+ money:'Jewellery is most of the money — she earns on making charges and trust, not on the gold itself.',
+ runs:'A Tata company, professionally run, with a habit of building brands slowly and keeping them for decades.',
+ fueling:'Weddings, gold as the family\u2019s default gift, and shoppers moving from the local jeweller to a brand with a bill.',
+ wrong:'When gold prices spike, buyers postpone. And rivals like Kalyan are opening showrooms in her best neighbourhoods.'},
+ETERNAL:{
+ sells:'Zomato brings dinner; Blinkit brings everything else in ten minutes. One app for hunger, one for impatience.',
+ money:'She takes a cut of every order and delivery fee. Food delivery now makes money; Blinkit is spending to grow first.',
+ runs:'Founded and run by Deepinder Goyal, who has a habit of killing his own ideas in public and moving on fast.',
+ fueling:'Quick commerce is rewiring how urban India shops — the ten-minute habit, once formed, doesn\u2019t unform.',
+ wrong:'Blinkit\u2019s land grab burns money, and Swiggy, Zepto and the giants are all grabbing too. Runs this hot, cools this fast.'},
+SWIGGY:{
+ sells:'The other half of India\u2019s food-delivery duopoly, with Instamart racing Blinkit for the ten-minute basket.',
+ money:'Same maths as her rival — a cut per order — but she\u2019s a step behind on profits and spending to catch up.',
+ runs:'Founded by Sriharsha Majety, engineer-quiet where her rival is loud.',
+ fueling:'She listed later, she\u2019s cheaper on most measures, and every quarter she narrows the gap the market watches.',
+ wrong:'Second place in a two-horse race is expensive. If Instamart can\u2019t close on Blinkit, the discount is deserved.'},
+HINDUNILVR:{
+ sells:'Dove, Surf, Lakmé, Horlicks, Kissan — she probably owns half your bathroom shelf and a corner of the kitchen.',
+ money:'Small things, bought weekly, by hundreds of millions — pennies of profit multiplied by a nation.',
+ runs:'Unilever\u2019s Indian arm, professionally managed, famous as a training ground for the country\u2019s CEOs.',
+ fueling:'When rural India has money, she feels it first. Premium shampoos and skincare are where the growth hides.',
+ wrong:'Young brands born on Instagram are eating the edges of her categories, and growth has been slow for a giant this pricey.'},
+BRITANNIA:{
+ sells:'Good Day, Marie Gold, NutriChoice — the biscuit tin of the nation, plus bread, cake and cheese.',
+ money:'Biscuits are a habit business: thin margins per pack, gigantic volumes, and a truck reaching nearly every shop in India.',
+ runs:'Part of the Wadia group, run day-to-day by professional management.',
+ fueling:'She\u2019s pushing beyond biscuits into dairy and snacks, and deeper into the Hindi heartland where she under-indexes.',
+ wrong:'Wheat, sugar and palm oil set her costs, and she doesn\u2019t set those prices. Cheap local biscuits fight her in every small shop.'},
+NESTLEIND:{
+ sells:'Maggi, KitKat, Nescafé, Cerelac — small indulgences and first foods, at enormous scale.',
+ money:'Brands strong enough to charge a little extra, on things bought without thinking — that extra is the whole business.',
+ runs:'The Indian arm of the Swiss giant — conservative, cash-rich, dividend-happy.',
+ fueling:'Coffee culture, snacking, and a long-delayed push into smaller towns.',
+ wrong:'One food-safety scare can undo years — Maggi has lived it once. And the shares rarely go on sale.'},
+ITC:{
+ sells:'Cigarettes fund an empire — Aashirvaad atta, Sunfeast, hotels, notebooks and paper.',
+ money:'Tobacco is the cash machine: taxed heavily, advertised nowhere, and still remarkably profitable. That cash built the rest.',
+ runs:'Professionally managed with no single promoter — an unusual creature among Indian giants.',
+ fueling:'The foods business is finally big enough to matter, and the hotels have been set free into their own company.',
+ wrong:'Every budget can raise tobacco taxes overnight. Her biggest business is one the world is trying to quit.'},
+TATAMOTORS:{
+ sells:'Trucks and Nexons at home, Jaguars and Range Rovers abroad — two very different moods in one garage.',
+ money:'JLR\u2019s luxury margins carry the group; Indian trucks track the economy; EVs are the bet on tomorrow.',
+ runs:'A Tata company through and through, with the group\u2019s patience and its complexity.',
+ fueling:'Range Rover demand has stayed rich-world resilient, and she leads India\u2019s electric-car race by a distance.',
+ wrong:'Luxury cars are the first thing a nervous world stops buying. She\u2019s cyclical three ways at once — runs hot, cools hard.'},
+MARUTI:{
+ sells:'Every third car on an Indian road is hers. Small cars built her; Brezzas and Grand Vitaras keep her.',
+ money:'Volume, a dealer in every district, and spare parts forever — cars are sold once, serviced for a decade.',
+ runs:'Suzuki\u2019s Indian arm, run with Japanese cost discipline and an Indian distribution instinct.',
+ fueling:'India\u2019s SUV appetite, where she arrived late and is catching up model by model.',
+ wrong:'She missed the early EV bus, and small cars — her old kingdom — have stopped growing as buyers skip straight to SUVs.'},
+ASIANPAINT:{
+ sells:'The paint on most Indian walls — and a home-décor push to own the whole room.',
+ money:'A distribution machine studied in business schools: her tinting machines sit inside tens of thousands of paint shops.',
+ runs:'Founder families still hold large stakes; professionals run it day to day.',
+ fueling:'Every home built, every home repainted — paint is a repeat purchase disguised as a construction product.',
+ wrong:'Birla\u2019s Opus has arrived with serious money, the first real fight of her adult life. Margins are the battlefield.'},
+RELIANCE:{
+ sells:'Oil and gas paying for everything else — Jio in your phone, retail on your street, and green energy next.',
+ money:'The refinery is the cash engine; Jio and retail are the growth engines; the new-energy build is where the cash is going.',
+ runs:'Mukesh Ambani\u2019s house — succession to the next generation is underway in public view.',
+ fueling:'Jio keeps raising prices without losing people, and the retail arm keeps swallowing categories.',
+ wrong:'So many businesses under one roof that the market struggles to price her — and the energy transition cuts both ways.'},
+HDFCBANK:{
+ sells:'The bank India trusts with its salary account. Careful, enormous, a little boring on purpose.',
+ money:'She gathers deposits cheap, lends them out dear, and rarely lends to people who won\u2019t pay back — that last part is the moat.',
+ runs:'Professionally run since birth; the founder-era culture of caution outlived the founders.',
+ fueling:'After swallowing her home-loan parent, she\u2019s digesting — when deposit growth catches up, the old pace can return.',
+ wrong:'She\u2019s so large now that growing fast is mathematically hard. The merger\u2019s indigestion has tested famously patient shareholders.'},
+INFY:{
+ sells:'Writes and runs software for the world\u2019s big companies — banks, retailers, airlines.',
+ money:'Sells engineer hours and increasingly outcomes; the margin lives in doing it cheaper from India than anyone can at home.',
+ runs:'Founded by Narayana Murthy and partners; professionally run, with the founders\u2019 frugality baked in.',
+ fueling:'Every company on earth is being told to rebuild with AI — someone has to do the rebuilding.',
+ wrong:'If AI writes the code, the hours she sells shrink. Clients cut tech budgets the moment their own economies wobble.'},
+BHARTIARTL:{
+ sells:'One of the two phone networks nearly everyone in India is on, plus a fast-growing Africa arm.',
+ money:'Monthly bills from hundreds of millions of SIMs — a subscription business the size of a country.',
+ runs:'Sunil Mittal\u2019s company, the survivor of India\u2019s brutal telecom wars.',
+ fueling:'Tariffs keep drifting up now that the price war is over, and every rupee of that drifts almost straight to profit.',
+ wrong:'Telecom needs endless spending on spectrum and towers, and a regulator\u2019s pen can redraw the economics overnight.'},
+DMART:{
+ sells:'Everyday low prices, no frills, and queues at the billing counter that say it\u2019s working.',
+ money:'She buys in bulk, pays suppliers fast for extra discounts, owns her stores, and passes savings on — winning on price, forever.',
+ runs:'Built by Radhakishan Damani, the investor\u2019s investor, who still owns most of it.',
+ fueling:'Every new store pays for itself unusually fast, and there are hundreds of Indian towns still waiting for one.',
+ wrong:'Quick commerce is stealing the top-up shop, and she\u2019s been slow online. The shares have long been priced for perfection.'},
+VBL:{
+ sells:'Bottles Pepsi, Sting and Mountain Dew for a billion thirsty people, now across Africa too.',
+ money:'PepsiCo owns the brands; she owns the trucks, plants and fridges — and keeps the operating profit on every bottle.',
+ runs:'The Jaipuria family\u2019s company, run with an operator\u2019s obsession for route efficiency.',
+ fueling:'Sting turned energy drinks into a mass-market habit, and new territories keep arriving.',
+ wrong:'A cool, rainy summer hurts. So would India deciding to tax sugar like it taxes tobacco.'},
+PAGEIND:{
+ sells:'Jockey in India — innerwear as a franchise, brand loyalty as the moat.',
+ money:'A licence to print a global brand locally: she manufactures, distributes and keeps rich margins on repeat purchases.',
+ runs:'The Genomal family has held the Jockey licence for decades — alignment measured in generations.',
+ fueling:'Premiumisation of the ordinary — people trading up on things nobody sees.',
+ wrong:'When wallets tighten, even underwear feels the pinch — recent years proved she\u2019s not immune to slowdowns.'},
+KALYANKJIL:{
+ sells:'Gold showrooms marching across India, one town and one wedding season at a time.',
+ money:'She\u2019s shifted to franchise showrooms — partners put up the capital, she lends the brand and keeps growing lighter.',
+ runs:'The Kalyanaraman family\u2019s business from Thrissur, gone national.',
+ fueling:'The same shift lifting Titan — buyers leaving the neighbourhood jeweller for a brand with a hallmark and a bill.',
+ wrong:'Jewellery retail runs on borrowed money and inventory; a gold-price shock or a bad season stresses both. She runs warmer and riskier than Titan.'},
+MANYAVAR:{
+ sells:'Manyavar — the sherwani at nearly every Indian wedding, with Mohey dressing the bride\u2019s side.',
+ money:'Occasion wear carries luxury margins without luxury rents; celebration clothing is remarkably recession-proof.',
+ runs:'Founder Ravi Modi\u2019s family company — he still runs it.',
+ fueling:'The great Indian wedding refuses to get smaller, and she has no national rival in men\u2019s occasion wear.',
+ wrong:'She\u2019s a one-occasion company; a weak wedding calendar shows up directly. Women\u2019s wear is a harder market she hasn\u2019t cracked.'},
+INDIGO:{
+ sells:'IndiGo — more than half of everyone flying in India is on her planes.',
+ money:'One aircraft type, fast turnarounds, brutal cost discipline — she makes money at fares that lose money for others.',
+ runs:'Co-founded by Rahul Bhatia; professionally run with famous punctuality about costs.',
+ fueling:'A country that\u2019s just started flying — new airports open every year and most Indians have never boarded a plane.',
+ wrong:'Oil is her biggest bill and she doesn\u2019t set the price. Engines, groundings and a rupee wobble can eat a great quarter.'},
+IRCTC:{
+ sells:'The only ticket window for Indian Railways online — plus catering and packaged water on every train.',
+ money:'A convenience fee on a monopoly of necessity — booking tickets is not optional, and neither is she.',
+ runs:'A government company; the government remains the majority owner and the rule-setter.',
+ fueling:'Rail travel keeps growing, and every tatkal rush is revenue.',
+ wrong:'Her owner can change her fees with a circular — it has happened before, overnight.'},
+PVRINOX:{
+ sells:'Nearly every multiplex screen in the country — popcorn, recliners and the big Friday release.',
+ money:'Tickets are half the story; popcorn and ads are where the margin lives.',
+ runs:'The merged Bijli and Jain family businesses — showmen turned consolidators.',
+ fueling:'When a big film lands, the whole country still shows up at once — no streaming service replicates that weekend.',
+ wrong:'She\u2019s hostage to the release calendar and the OTT habit. Empty weekdays and heavy leases make bad quarters ugly.'},
+APOLLOHOSP:{
+ sells:'India\u2019s biggest hospital chain, with pharmacies on every third corner and a digital health app tying it together.',
+ money:'Hospital beds in big cities earn well once full; the pharmacy arm adds volume; diagnostics add stickiness.',
+ runs:'The Reddy family\u2019s institution — founded by Dr Prathap Reddy, with the next generations running divisions.',
+ fueling:'Insurance is finally paying India\u2019s hospital bills, which means more people say yes to treatment.',
+ wrong:'Healthcare pricing is politics; a cap on procedure rates would land directly on her margins.'},
+PIDILITIND:{
+ sells:'Fevicol — the bond that\u2019s a punchline and a moat at once. Plus Fevikwik, M-Seal and Dr. Fixit.',
+ money:'Small-ticket products carpenters and plumbers insist on by name; the brand does the selling, the margin does the compounding.',
+ runs:'The Parekh family\u2019s company, famously long-term about brands and distribution.',
+ fueling:'Every home built or renovated uses her products a dozen times without noticing.',
+ wrong:'Her raw materials come from crude oil; when it spikes, margins squeeze. The shares almost never come cheap.'},
+JUBLFOOD:{
+ sells:'Domino\u2019s in India — the thirty-minute pizza — plus Popeyes finding its feet.',
+ money:'A franchise of a global brand run at Indian scale; delivery density is the secret — more stores, shorter rides, hotter pizza.',
+ runs:'Part of the Jubilant Bhartia group, with professional management under a strong franchisor.',
+ fueling:'Cheap, fast comfort food travels well into smaller towns, and her app ordering keeps aggregator fees at bay.',
+ wrong:'Eating out is the first cutback in a squeeze, and food delivery apps keep the pressure on value.'},
+MARICO:{
+ sells:'Parachute and Saffola — hair oil and heart oil, both habits — plus a stable of young digital brands.',
+ money:'Copra in, brand out: she buys coconuts by the tonne and sells trust in blue bottles.',
+ runs:'Founded by Harsh Mariwala, now chaired by him with professionals running it — a case study in letting go well.',
+ fueling:'Her acquired digital-first brands are growing fast enough to change her shape.',
+ wrong:'Copra prices swing her margins, and hair oil is a category young India uses less of.'},
+HONASA:{
+ sells:'Mamaearth and a family of young beauty brands born on Instagram — The Derma Co., Aqualogica, Dr. Sheth\u2019s.',
+ money:'Digital-first brands built on content and influencers instead of TV ads — cheaper to launch, harder to keep loyal.',
+ runs:'Founded by Varun and Ghazal Alagh — the founders are the faces, on Shark Tank and on the label.',
+ fueling:'The playbook that built Mamaearth is being run again and again on new brands.',
+ wrong:'Born-online brands can die online too — trends turn fast, and the giants have learnt her playbook.'},
+BAJFINANCE:{
+ sells:'Lends for phones, fridges, holidays and everything on EMI — consumer credit as a consumer product.',
+ money:'Borrows wholesale, lends retail in small tickets at healthy rates, and underwrites with data most banks envy.',
+ runs:'Part of the Bajaj house, professionally run, with a long record of growing fast without blowing up.',
+ fueling:'India\u2019s EMI habit is still young, and her app wants to be the storefront for all of it.',
+ wrong:'Unsecured lending looks brilliant until the cycle turns — the whole game is how she behaves in the bad year.'},
+NAUKRI:{
+ sells:'Naukri for jobs, 99acres for homes — and early cheques into Zomato and Policybazaar that became fortunes.',
+ money:'Job listings are a near-monopoly toll on white-collar hiring; the investments are a venture fund hiding inside.',
+ runs:'Founded by Sanjeev Bikhchandani, one of Indian internet\u2019s original builders.',
+ fueling:'Hiring cycles turn, but every upturn routes through her — and the portfolio keeps surprising.',
+ wrong:'When IT hiring freezes, her core engine slows with it, and the market swings her with tech sentiment.'},
+};
+
+/* ---------- threads (her world) ---------- */
+const THREADS={
+NYKAA:[['HONASA','her younger rival'],['RELIANCE','the giant eyeing her market'],['TRENT','who else owns the wardrobe']],
+HONASA:[['NYKAA','the shelf she grew up on'],['HINDUNILVR','the giant she pokes']],
+TRENT:[['DMART','the other queue in retail'],['ABFRL','her struggling rival'],['TITAN','her Tata cousin']],
+TITAN:[['KALYANKJIL','her rival in gold'],['MANYAVAR','who wins when India weds'],['TRENT','her Tata cousin']],
+KALYANKJIL:[['TITAN','the rival with the head start'],['SENCO','the east\u2019s challenger'],['MANYAVAR','who wins when India weds']],
+MANYAVAR:[['TITAN','who wins when India weds'],['KALYANKJIL','who wins when India weds'],['PVRINOX','the other occasion business']],
+ETERNAL:[['SWIGGY','her only real rival'],['JUBLFOOD','who she delivers for'],['DMART','the store she\u2019s undercutting']],
+SWIGGY:[['ETERNAL','the rival a step ahead'],['DELHIVERY','who else moves parcels']],
+HINDUNILVR:[['NESTLEIND','her multinational peer'],['MARICO','the local specialist'],['HONASA','the upstart at her heels']],
+BRITANNIA:[['NESTLEIND','her rival on the shelf'],['ITC','who fights her in biscuits'],['BIKAJI','the snack upstart']],
+NESTLEIND:[['BRITANNIA','her rival on the shelf'],['HINDUNILVR','her multinational peer'],['VBL','who else owns the fridge']],
+ITC:[['HINDUNILVR','who she chases in soaps and food'],['BRITANNIA','who she fights in biscuits']],
+TATAMOTORS:[['MARUTI','her rival on the road'],['M&M','who wins the SUV war'],['OLAELEC','the electric upstart']],
+MARUTI:[['TATAMOTORS','her rival on the road'],['HYUNDAI','the number two'],['M&M','who took the SUV crown']],
+'M&M':[['MARUTI','her rival on the road'],['TATAMOTORS','her rival in EVs'],['ESCORTS','tractors']],
+ASIANPAINT:[['BERGEPAINT','the perennial number two'],['GRASIM','the new fighter with deep pockets'],['PIDILITIND','the other home-improvement moat']],
+RELIANCE:[['BHARTIARTL','her rival in telecom'],['DMART','who she fights in retail'],['NYKAA','whose market she wants']],
+HDFCBANK:[['ICICIBANK','her closest rival'],['SBIN','the state giant'],['BAJFINANCE','who lends where she won\u2019t']],
+ICICIBANK:[['HDFCBANK','the rival she\u2019s been outrunning'],['AXISBANK','the third horse']],
+INFY:[['TCS','the bigger rival'],['HCLTECH','the quieter peer'],['PERSISTENT','the mid-cap running faster']],
+TCS:[['INFY','her closest rival'],['WIPRO','the old peer']],
+BHARTIARTL:[['RELIANCE','the rival with deeper pockets'],['IDEA','the third that\u2019s fading'],['INDUSTOWER','who holds her antennas']],
+DMART:[['TRENT','the other retail queue'],['ETERNAL','the ten-minute threat'],['RELIANCE','the giant next door']],
+VBL:[['NESTLEIND','who else owns the fridge'],['UNITDSPR','the other drinks shelf'],['SULA','the newest pour']],
+PAGEIND:[['TRENT','where the wardrobe budget goes'],['ABFRL','the brand house next door']],
+INDIGO:[['GMRAIRPORT','the airports she pays'],['IRCTC','how India travelled before'],['SAFARI','who packs the bags']],
+IRCTC:[['INDIGO','where travellers upgrade to'],['CONCOR','the other rail story']],
+PVRINOX:[['ETERNAL','the couch she competes with'],['SAREGAMA','who owns the songs'],['DEVYANI','the food court next door']],
+APOLLOHOSP:[['MAXHEALTH','her metro rival'],['LALPATHLAB','the diagnostics pure-play'],['STARHEALTH','who pays the bills']],
+PIDILITIND:[['ASIANPAINT','the other home moat'],['ASTRAL','who she meets at the hardware shop']],
+JUBLFOOD:[['ETERNAL','who carries her pizzas'],['DEVYANI','the rival food court'],['VBL','who fills the cola']],
+MARICO:[['HINDUNILVR','the giant in her categories'],['DABUR','the ayurveda rival'],['HONASA','the digital native she copies']],
+BAJFINANCE:[['HDFCBANK','the bank she out-lends'],['CHOLAFIN','the quieter peer'],['PAYTM','the app that wants her lunch']],
+NAUKRI:[['ETERNAL','her most famous cheque'],['POLICYBZR','her other famous cheque'],['AFFLE','the adtech neighbour']],
+PAYTM:[['BAJFINANCE','the lender she wants to be'],['POLICYBZR','the fintech peer']],
+DELHIVERY:[['ETERNAL','who fills her vans'],['CONCOR','freight, the older way']],
+};
+
+/* ---------- sector templates for generated decks ---------- */
+const SECT_TPL={
+fin:{money:'She takes money in cheap and lends it out dear — the whole craft is not losing what she lends.',
+ wrong:'One bad lending season can eat years of careful profit. Watch what she lends against, not just how fast she grows.'},
+it:{money:'She sells engineer hours to companies abroad; the margin lives in doing it cheaper from India.',
+ wrong:'When her clients\u2019 economies wobble, tech budgets are cut first — and AI is rewriting what an hour of coding is worth.'},
+energy:{money:'Fuel and power are bought every single day — her earnings track prices she mostly doesn\u2019t set.',
+ wrong:'Crude, coal and government policy can rewrite her year overnight. The world is also slowly moving off her core product.'},
+fmcg:{money:'Small things bought weekly by millions — pennies of profit multiplied by a nation.',
+ wrong:'Raw material prices squeeze her margins, and cheaper local rivals fight her in every small shop.'},
+auto:{money:'Vehicles are sold once and serviced for a decade — volumes make the year, spare parts make the margin.',
+ wrong:'Demand is cyclical and emotional; a slow economy parks her sales, and the electric shift is redrawing the map.'},
+pharma:{money:'Medicines are bought in sickness and in health — steady demand, with exports adding the growth.',
+ wrong:'One failed inspection at one plant can shut a market. Drug pricing is politics in every country she sells in.'},
+metal:{money:'She digs or makes a commodity; world prices decide her profits far more than anything she does.',
+ wrong:'Commodity cycles are brutal both ways — the same forces that double her profit can halve it.'},
+retail:{money:'She buys at wholesale, sells at retail, and lives on footfall — every store is a small bet on a neighbourhood.',
+ wrong:'Fashion and footfall are fickle, rents are not. A slow season shows up in her numbers fast.'},
+infra:{money:'She builds or supplies what India constructs — order books today become revenue over years.',
+ wrong:'Projects run late and over budget as a rule of the trade, and government spending cycles decide her order book.'},
+telecom:{money:'Monthly bills from millions of connections — subscription money, with heavy spending on the network behind it.',
+ wrong:'Regulation and price wars have broken this industry before. Capital hunger never really ends.'},
+net:{money:'She grew users first and is now proving she can charge them — the internet playbook, Indian chapter.',
+ wrong:'Growth stocks are priced on belief; when belief cools, the fall is quick. Rivals are one funding round away.'},
+};
+
+/* ---------- companies build ---------- */
+const COMPANIES=RAW.map(r=>{
+  const [sym,name,sector,w,temper,identity,aliases]=r;
+  return {sym,name,sector,w,temper,identity,aliases:aliases||[],
+    sizeBand: w>=1.0?'giant': w>=0.25?'mid':'small'};
+});
+const BY={}; COMPANIES.forEach(c=>BY[c.sym]=c);
+const totalW=COMPANIES.reduce((a,c)=>a+c.w,0);
+
+/* ---------- signals (deterministic demo pipeline output) ---------- */
+const SIGCACHE={};
+function sig(c){
+  if(SIGCACHE[c.sym])return SIGCACHE[c.sym];
+  const r=prng(hashStr('sig:'+c.sym));
+  const m3=Math.round((r()*44-16)); // 3-month move %
+  const m6=Math.round(m3*0.9+(r()*30-10));
+  const hi52=Math.round(70+r()*30); // % of 52w high
+  const strength= m3>=10&&hi52>=90?'run': m3<=-6||hi52<72?'cool':'steady';
+  const pcl=Math.round(r()*100); // valuation percentile vs own 5y history
+  const price= pcl<=30?'cheap': pcl>=72?'pricey':'fair';
+  const fii=(r()*3-1.4); // qoq FII delta pp
+  const money= fii>=0.6?'in': fii<=-0.5?'out':'quiet';
+  const px=Math.round(40+r()*3400);
+  const out={strength,price,money,m3,m6,hi52,pcl,fii:+fii.toFixed(1),px};
+  SIGCACHE[c.sym]=out; return out;
 }
-function thesisStep(s){
-  return `<p class="eyebrow">Step 1 of 3 · The thesis</p>
-  <h2 class="script" style="font-size:23px;margin:6px 0 4px">Why ${esc(s.name)}?</h2>
-  <p class="small" style="margin-bottom:16px">Say it before you commit. This note is <strong>private</strong> until the call resolves — sharing is your choice, after the verdict, never before.</p>
-  <p class="tiny" style="margin-bottom:6px">BETTING <b style="color:var(--up)">UP</b> BECAUSE…</p>
-  <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
-    ${REASONS.map(r=>`<button class="chip rchip" data-r="${r.k}">${r.label}<span class="tiny" style="display:block">${r.plain}</span></button>`).join('')}
-  </div>
-  <textarea id="rtext" rows="2" maxlength="140" placeholder="…in one honest line. e.g. 'order book is real and margins just turned'"></textarea>
-  <p class="tiny" style="margin:14px 0 6px">EXPECTING</p>
-  <div class="row" style="gap:8px">
-    ${[5,10,20].map(t=>`<button class="chip tchip ${t===10?'on':''}" data-t="${t}">+${t}%</button>`).join('')}
-  </div>
-  <p class="tiny" style="margin:14px 0 6px">BY</p>
-  <div class="row" style="gap:8px;margin-bottom:16px">
-    ${[[21,'~1 month'],[63,'~3 months'],[126,'~6 months']].map(([d,l],i)=>`<button class="chip hchip ${i===1?'on':''}" data-h="${d}">${l}</button>`).join('')}
-  </div>
-  <div class="card" style="padding:12px 14px;background:var(--card2);margin-bottom:16px">
-    <p class="tiny">Heads up: verdicts here come in three flavours — <span class="up">Called it</span>, <span style="color:var(--brass)">Right for the wrong reason</span>, and <span class="down">Missed it</span>. Partial credit is real. Being right matters; knowing <em>why</em> you were right matters more.</p>
-  </div>
-  <button class="btn btn-primary" id="tnext" disabled>Size it →</button>`;
+/* plain-speech signal phrases */
+function strengthPhrase(c){const s=sig(c);
+  if(s.strength==='run')return`she\u2019s on a run — up ${s.m3}% in three months and near her yearly high`;
+  if(s.strength==='cool')return s.m3<0?`she\u2019s cooling — down ${Math.abs(s.m3)}% over three months`:`she\u2019s cooling — drifting well off her yearly high`;
+  return`she\u2019s been steady — moving with the market, no drama`}
+function pricePhrase(c){const s=sig(c);
+  if(s.price==='cheap')return`going cheap — priced lower against her own earnings than she\u2019s been for most of five years`;
+  if(s.price==='pricey')return`pricey — the market is paying more for her than it usually does, which means high hopes are already in the price`;
+  return`fairly priced — about what the market usually pays for her`}
+function moneyPhrase(c){const s=sig(c);
+  if(s.money==='in')return`foreign money has been coming in — big overseas funds raised their stake last quarter`;
+  if(s.money==='out')return`foreign money has been slipping out — big overseas funds trimmed their stake last quarter`;
+  return`big money has been quiet — foreign holdings barely moved last quarter`}
+const TEMPER_TXT={calm:'calm, slow to swing',steady:'even-keeled, moves with reason',lively:'lively, quick to swing'};
+
+/* ---------- prices (deterministic seeded walk; demo stand-in for EOD feed) ---------- */
+function price(sym,day){
+  const c=BY[sym]; const s=c?sig(c):{px:100,strength:'steady'};
+  const drift=s.strength==='run'?0.0016:s.strength==='cool'?-0.0009:0.0004;
+  const vol=(c&&c.temper==='lively')?0.021:(c&&c.temper==='calm')?0.009:0.014;
+  let p=s.px||100; const r=prng(hashStr('walk:'+sym));
+  for(let d=1;d<=day;d++){p*=1+drift+(r()*2-1)*vol; }
+  // consume same count regardless of path for determinism (walk is sequential anyway)
+  return p;
 }
-function wireThesis(s){
-  const upd=()=>{ byId('tnext').disabled = !(draft.reasonType && byId('rtext').value.trim().length>=8); };
-  document.querySelectorAll('.rchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.rchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.reasonType=b.dataset.r;upd();});
-  document.querySelectorAll('.tchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.target=+b.dataset.t;});
-  document.querySelectorAll('.hchip').forEach(b=>b.onclick=()=>{document.querySelectorAll('.hchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.horizon=+b.dataset.h;});
-  byId('rtext').oninput=upd;
-  byId('tnext').onclick=()=>{ draft.reasonText=byId('rtext').value.trim(); openSheet(sizeStep(s)); wireSize(s); };
+function indexLevel(day){
+  let p=100; const r=prng(hashStr('walk:NIFTYTM'));
+  for(let d=1;d<=day;d++){p*=1+0.0005+(r()*2-1)*0.008}
+  return p;
 }
-/* sizing: OPEN PARAMETER — default f(riskBudget, conviction) below; tune freely */
-const SIZE_BANDS={low:[0.05,0.10],medium:[0.10,0.18],high:[0.18,0.25]};
-function sizeStep(s){
-  const t=S.goal.target;
-  return `<p class="eyebrow">Step 2 of 3 · The size</p>
-  <h2 class="script" style="font-size:23px;margin:6px 0 4px">How sure are you?</h2>
-  <p class="small" style="margin-bottom:14px">Your goal's risk budget: up to <span class="mono">25%</span> (${fmt(t*0.25)}) in any single pick. A guide, not a gate.</p>
-  <div class="row" style="gap:8px;margin-bottom:16px">
-    ${['low','medium','high'].map(c=>`<button class="chip cchip" data-c="${c}">${c}</button>`).join('')}
-  </div>
-  <div id="sizebox" style="display:none">
-    <p class="tiny" style="margin-bottom:6px">SUGGESTED FOR THIS CONVICTION: <span id="srange" class="mono" style="color:var(--brass)"></span></p>
-    <input id="samt" type="number" inputmode="numeric" placeholder="Amount in ₹" style="margin-bottom:10px">
-    <div id="softwarn"></div>
-    <p class="tiny" style="margin:12px 0 6px">YOUR GOAL, WITH THIS DEPLOYED</p>
-    <div id="ghostmeter">${goalMeter(0)}</div>
-    <button class="btn btn-primary" id="snext" disabled style="margin-top:16px">Review the call →</button>
-  </div>`;
-}
-function wireSize(s){
-  const t=S.goal.target;
-  document.querySelectorAll('.cchip').forEach(b=>b.onclick=()=>{
-    document.querySelectorAll('.cchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');
-    draft.conviction=b.dataset.c;
-    const [lo,hi]=SIZE_BANDS[draft.conviction];
-    byId('sizebox').style.display='block';
-    byId('srange').textContent=`${fmt(t*lo)} – ${fmt(t*hi)}`;
-    if(!byId('samt').value) byId('samt').value=Math.round(t*(lo+hi)/2/100)*100;
-    byId('samt').dispatchEvent(new Event('input'));
+
+/* ---------- store ---------- */
+const DEFAULT_STATE={
+  v:1, day:0, seen:false, coach:{pinch:false,bloom:false,dial:false},
+  gather:'sector', paint:'sector',
+  trail:[],           // {sym,type:'open'|'hold'|'thread'|'search'|'facet',day,t,extra}
+  holds:{},           // sym -> count
+  declined:{},        // sym -> day of decline (invitation cooldown)
+  invited:{},         // sym -> true once accepted/composing
+  goal:null,          // {name,amount,when}
+  hunches:[],         // {id,sym,dir,reason,horizonD,startDay,entry,amount,idx0,status,closedDay,verdict}
+  news:null,          // {sym,line}
+};
+let S;
+function load(){try{const raw=localStorage.getItem('hunch.v2');S=raw?Object.assign({},DEFAULT_STATE,JSON.parse(raw)):{...DEFAULT_STATE}}catch(e){S={...DEFAULT_STATE}}}
+function save(){try{localStorage.setItem('hunch.v2',JSON.stringify(S))}catch(e){}}
+load();
+
+/* =====================================================================
+   THE FIELD — canvas engine
+   ===================================================================== */
+const cv=$('#field'),ctx=cv.getContext('2d');
+let DPR=1,VW=0,VH=0;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);VW=window.innerWidth;VH=window.innerHeight;cv.width=VW*DPR;cv.height=VH*DPR;cv.style.width=VW+'px';cv.style.height=VH+'px';fitZ=computeFitZ();cam.z=clamp(cam.z||fitZ,fitZ*0.85,fitZ*9)}
+window.addEventListener('resize',resize);
+
+/* circles */
+const RMAX=560;
+const circles=COMPANIES.map(c=>{
+  const r=clamp(9+Math.sqrt(c.w/totalW)*RMAX,9,86);
+  const h=prng(hashStr('ph:'+c.sym));
+  return {c,r,x:0,y:0,vx:0,vy:0,ax:0,ay:0,
+    phase:h()*Math.PI*2,per:8+h()*6,amp:6+h()*2.5};
+});
+const CIRC={}; circles.forEach(o=>CIRC[o.c.sym]=o);
+
+/* group packing */
+function packGroups(groups){ // groups: [{key,r}] -> positions
+  const placed=[];
+  const sorted=[...groups].sort((a,b)=>b.r-a.r);
+  sorted.forEach((g,i)=>{
+    if(i===0){g.x=0;g.y=0;placed.push(g);return}
+    let best=null;
+    placed.forEach(p=>{
+      for(let a=0;a<24;a++){
+        const ang=a/24*Math.PI*2;
+        const d=p.r+g.r+18;
+        const x=p.x+Math.cos(ang)*d,y=p.y+Math.sin(ang)*d;
+        if(placed.every(q=>Math.hypot(q.x-x,q.y-y)>=q.r+g.r+10)){
+          const score=Math.hypot(x,y*1.35);
+          if(!best||score<best.score)best={x,y,score};
+        }
+      }
+    });
+    if(!best)best={x:0,y:placed.length*g.r*2,score:0};
+    g.x=best.x;g.y=best.y;placed.push(g);
   });
-  document.body.addEventListener('input',function h(e){
-    if(e.target && e.target.id==='samt'){
-      const a=+e.target.value||0; draft.amount=a;
-      byId('snext').disabled=!(a>0);
-      byId('ghostmeter').innerHTML=goalMeter(a);
-      const w=byId('softwarn'), share=a/t;
-      if(share>0.4) w.innerHTML=`<p class="small" style="color:var(--down)">You're really committing here — that's <span class="mono">${(share*100).toFixed(0)}%</span> of the whole goal in one stock. Most spread this across 3–4 picks. Your call, always.</p>`;
-      else if(share>0.25) w.innerHTML=`<p class="small" style="color:var(--brass)">That's past your <span class="mono">25%</span> single-pick budget (${(share*100).toFixed(0)}%). Fine if it's deliberate.</p>`;
-      else w.innerHTML='';
+  // center
+  let mx=0,my=0;placed.forEach(g=>{mx+=g.x;my+=g.y});mx/=placed.length;my/=placed.length;
+  placed.forEach(g=>{g.x-=mx;g.y-=my});
+  return groups;
+}
+let ANCHORS={},GROUPMETA=[];
+function layout(modeKey){
+  const M=MODES[modeKey];
+  const buckets={};M.groups.forEach(k=>buckets[k]=[]);
+  circles.forEach(o=>{const g=M.of(o.c);(buckets[g]||(buckets[g]=[])).push(o)});
+  const groups=M.groups.filter(k=>buckets[k].length).map(k=>{
+    const area=buckets[k].reduce((a,o)=>a+o.r*o.r*Math.PI,0);
+    return{key:k,r:Math.sqrt(area/Math.PI)*1.6,n:buckets[k].length};
+  });
+  if(M.axis){ // ordered pools along x
+    let cur=0;const pad=64;
+    groups.forEach((g,i)=>{g.x=cur+g.r;g.y=0;cur+=g.r*2+pad});
+    const mx=(groups[0].x-groups[0].r+groups[groups.length-1].x+groups[groups.length-1].r)/2;
+    groups.forEach(g=>g.x-=mx);
+  } else packGroups(groups);
+  ANCHORS={};GROUPMETA=groups.map(g=>({...g,label:M.label(g.key)}));
+  groups.forEach(g=>ANCHORS[g.key]=g);
+  // per-circle retained offset inside its group (seeded per mode+sym)
+  circles.forEach(o=>{
+    const g=ANCHORS[M.of(o.c)];if(!g)return;
+    const rr=prng(hashStr('off:'+modeKey+':'+o.c.sym));
+    const ang=rr()*Math.PI*2, dist=Math.sqrt(rr())*(g.r-o.r*0.6)*0.94;
+    o.tx=g.x+Math.cos(ang)*dist; o.ty=g.y+Math.sin(ang)*dist*0.92;
+  });
+}
+
+/* camera */
+let cam={x:0,y:0,z:0.5},fitZ=0.5,camAnim=null;
+function worldBounds(){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;GROUPMETA.forEach(g=>{x0=Math.min(x0,g.x-g.r);x1=Math.max(x1,g.x+g.r);y0=Math.min(y0,g.y-g.r);y1=Math.max(y1,g.y+g.r)});return{x0,y0,x1,y1}}
+function computeFitZ(){if(!GROUPMETA.length)return 0.5;const b=worldBounds();return Math.min(VW/(b.x1-b.x0+140),VH/(b.y1-b.y0+220))}
+function animCam(to,dur){camAnim={from:{...cam},to,t0:performance.now(),dur}}
+function zoomLevel(){const rel=cam.z/fitZ;return rel<1.5?0:rel<2.9?1:2}
+const w2sX=x=>(x-cam.x)*cam.z+VW/2, w2sY=y=>(y-cam.y)*cam.z+VH/2;
+const s2wX=x=>(x-VW/2)/cam.z+cam.x, s2wY=y=>(y-VH/2)/cam.z+cam.y;
+
+/* physics + render */
+let migrateUntil=0,labelAlpha=1,lastT=performance.now();
+function tick(now){
+  const dt=Math.min(.05,(now-lastT)/1000);lastT=now;
+  const migrating=now<migrateUntil;
+  const k=migrating?2.1:5.5, damp=migrating?0.86:0.8;
+  for(const o of circles){
+    o.vx=(o.vx+(o.tx-o.x)*k*dt)*damp;
+    o.vy=(o.vy+(o.ty-o.y)*k*dt)*damp;
+    o.x+=o.vx;o.y+=o.vy;
+  }
+  // light collision (skip while deep-migrating for the glide)
+  if(!migrating){
+    for(let i=0;i<circles.length;i++){const a=circles[i];
+      for(let j=i+1;j<circles.length;j++){const b=circles[j];
+        const dx=b.x-a.x,dy=b.y-a.y,rr=(a.r+b.r)*0.62;
+        if(Math.abs(dx)>rr||Math.abs(dy)>rr)continue;
+        const d2=dx*dx+dy*dy;if(d2>rr*rr||d2===0)continue;
+        const d=Math.sqrt(d2),push=(rr-d)/d*0.5*0.28;
+        a.x-=dx*push;a.y-=dy*push;b.x+=dx*push;b.y+=dy*push;
+      }}
+  }
+  labelAlpha=lerp(labelAlpha,migrating?0:1,dt*3.2);
+  if(camAnim){const p=clamp((now-camAnim.t0)/camAnim.dur,0,1),e=easeIO(p);
+    cam.x=lerp(camAnim.from.x,camAnim.to.x,e);cam.y=lerp(camAnim.from.y,camAnim.to.y,e);cam.z=lerp(camAnim.from.z,camAnim.to.z,e);
+    if(p>=1)camAnim=null}
+  render(now);
+  requestAnimationFrame(tick);
+}
+function render(now){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle='#FCFAF4';ctx.fillRect(0,0,VW,VH);
+  const P=MODES[S.paint],lvl=zoomLevel(),t=now/1000;
+  // circles
+  for(const o of circles){
+    const bx=reduceMotion?0:Math.sin(t/o.per*Math.PI*2+o.phase)*o.amp*0.4;
+    const by=reduceMotion?0:Math.sin(t/(o.per*1.18)*Math.PI*2+o.phase*1.7)*o.amp;
+    const sx=w2sX(o.x+bx),sy=w2sY(o.y+by),sr=o.r*cam.z;
+    if(sx<-sr-30||sx>VW+sr+30||sy<-sr-30||sy>VH+sr+30)continue;
+    if(sr<0.4)continue;
+    o._sx=sx;o._sy=sy;o._sr=sr;
+    const col=P.color(P.of(o.c));
+    ctx.globalAlpha=0.8;
+    ctx.fillStyle=col;
+    ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fill();
+    if(S.news&&S.news.sym===o.c.sym){ // her world shifted — soft glow
+      ctx.globalAlpha=0.32+0.14*Math.sin(t*2);
+      ctx.strokeStyle='#D8794A';ctx.lineWidth=Math.max(2,sr*0.09);
+      ctx.beginPath();ctx.arc(sx,sy,sr+Math.max(3,sr*0.14),0,Math.PI*2);ctx.stroke();
     }
+    const hun=S.hunches.some(h=>h.sym===o.c.sym&&h.status==='open');
+    if(hun){ctx.globalAlpha=0.55;ctx.strokeStyle='#221E17';ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.arc(sx,sy,sr+2.5,0,Math.PI*2);ctx.stroke()}
+  }
+  // names
+  ctx.globalAlpha=1;
+  if(lvl>=1){
+    const thr=lvl===1?24:8.5;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    for(const o of circles){
+      if(o._sr===undefined||o._sr<thr)continue;
+      if(o._sx<-40||o._sx>VW+40||o._sy<0||o._sy>VH)continue;
+      const fs=clamp(o._sr*0.32,10,16);
+      ctx.font=`500 ${fs}px ${'system-ui'}`;
+      ctx.fillStyle='rgba(34,30,23,.72)';
+      ctx.fillText(o.c.name,o._sx,o._sy);
+    }
+  }
+  // cluster labels
+  const la=labelAlpha*(lvl===2?0.25:1);
+  if(la>0.02){
+    ctx.textAlign='center';
+    for(const g of GROUPMETA){
+      const sx=w2sX(g.x),sy=w2sY(g.y-g.r)-14;
+      if(sx<-160||sx>VW+160||sy<-40||sy>VH+40)continue;
+      ctx.font='italic 500 14px Fraunces,Georgia,serif';
+      ctx.fillStyle=`rgba(138,125,102,${0.9*la})`;
+      ctx.fillText(g.label,sx,sy);
+    }
+  }
+}
+
+/* ---------- input: pan / pinch / wheel / tap / double-tap / swipe-down ---------- */
+let ptrs=new Map(),moved=false,lastTap=0,pinchBase=null,downAt=null,swipeStart=null;
+cv.addEventListener('pointerdown',e=>{
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  moved=false;downAt={x:e.clientX,y:e.clientY,t:performance.now()};
+  if(ptrs.size===1)swipeStart={x:e.clientX,y:e.clientY};
+  if(ptrs.size===2){const a=[...ptrs.values()];pinchBase={d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),z:cam.z,
+    cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2,wx:s2wX((a[0].x+a[1].x)/2),wy:s2wY((a[0].y+a[1].y)/2)}}
+  dismissFirst();
+});
+cv.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId))return;
+  const p=ptrs.get(e.pointerId);
+  const dx=e.clientX-p.x,dy=e.clientY-p.y;
+  if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
+  if(ptrs.size===1){
+    cam.x-=dx/cam.z;cam.y-=dy/cam.z;camAnim=null;
+  }
+  p.x=e.clientX;p.y=e.clientY;
+  if(ptrs.size===2&&pinchBase){
+    const a=[...ptrs.values()];const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+    const nz=clamp(pinchBase.z*d/pinchBase.d,fitZ*0.85,fitZ*9);
+    cam.z=nz;camAnim=null;
+    cam.x=pinchBase.wx-(pinchBase.cx-VW/2)/cam.z;
+    cam.y=pinchBase.wy-(pinchBase.cy-VH/2)/cam.z;
+    coach('pinch');
+  }
+});
+function endPtr(e){
+  ptrs.delete(e.pointerId);
+  if(ptrs.size<2)pinchBase=null;
+  if(ptrs.size===0&&downAt&&!moved){
+    const now=performance.now();
+    if(now-lastTap<320){onDoubleTap(e.clientX,e.clientY);lastTap=0}
+    else{lastTap=now;setTimeout(()=>{if(lastTap&&performance.now()-lastTap>=300){onTap(e.clientX,e.clientY);lastTap=0}},310)}
+  }
+  // swipe down to yours (from near top, fast, mostly vertical)
+  if(ptrs.size===0&&swipeStart&&downAt){
+    const dy=e.clientY-swipeStart.y,dx=Math.abs(e.clientX-swipeStart.x);
+    if(dy>110&&dx<70&&swipeStart.y<VH*0.35&&performance.now()-downAt.t<450)openYours();
+    swipeStart=null;
+  }
+  downAt=null;
+}
+cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
+cv.addEventListener('wheel',e=>{e.preventDefault();
+  const wx=s2wX(e.clientX),wy=s2wY(e.clientY);
+  cam.z=clamp(cam.z*(e.deltaY<0?1.12:0.89),fitZ*0.85,fitZ*9);camAnim=null;
+  cam.x=wx-(e.clientX-VW/2)/cam.z;cam.y=wy-(e.clientY-VH/2)/cam.z;
+  coach('pinch');
+},{passive:false});
+function pick(sx,sy){
+  const wx=s2wX(sx),wy=s2wY(sy);let best=null;
+  for(const o of circles){const d=Math.hypot(o.x-wx,o.y-wy);
+    if(d<=o.r+7/cam.z&&(!best||o.r<best.r))best=o}
+  return best;
+}
+function onTap(sx,sy){
+  const o=pick(sx,sy);
+  if(o)openCard(o.c.sym,'open');
+}
+function onDoubleTap(sx,sy){
+  if(zoomLevel()>=1){goHome();return}
+  const o=pick(sx,sy);const M=MODES[S.gather];
+  const g=o?ANCHORS[M.of(o.c)]:nearestGroup(s2wX(sx),s2wY(sy));
+  if(g)zoomToGroup(g);
+}
+function nearestGroup(wx,wy){let best=null,bd=1e12;GROUPMETA.forEach(g=>{const d=Math.hypot(g.x-wx,g.y-wy);if(d<bd){bd=d;best=g}});return best}
+function zoomToGroup(g){
+  const z=clamp(Math.min(VW/(g.r*2+90),VH/(g.r*2+190)),fitZ,fitZ*9);
+  animCam({x:g.x,y:g.y,z},900);
+}
+function goHome(){animCam({x:0,y:0,z:fitZ},900)}
+setInterval(()=>{$('#homebtn').classList.toggle('show',zoomLevel()>=1)},400);
+$('#homebtn').addEventListener('click',goHome);
+
+/* migration on gather change */
+function setGather(k){
+  if(S.gather===k)return;
+  S.gather=k;save();
+  layout(k);fitZ=computeFitZ();
+  migrateUntil=performance.now()+(reduceMotion?300:3200);
+  animCam({x:0,y:0,z:fitZ},reduceMotion?250:1400);
+  syncDials();
+}
+function setPaint(k){S.paint=k;save();syncDials()}
+
+/* =====================================================================
+   UI LAYER — dials, search, card, arc
+   ===================================================================== */
+const scrim=$('#scrim');
+let openSheets=[];
+function showSheet(el){el.classList.add('on');scrim.classList.add('on');openSheets.push(el)}
+function hideSheet(el){el.classList.remove('on');openSheets=openSheets.filter(x=>x!==el);if(!openSheets.length)scrim.classList.remove('on')}
+scrim.addEventListener('click',()=>{ // dismiss topmost quiet sheet
+  const el=openSheets[openSheets.length-1];
+  if(!el)return;
+  if(el.id==='invite')declineInvite();
+  else if(el.id==='verdict'){hideSheet(el)}
+  else hideSheet(el);
+  if(el.id==='dials')hideSheet(el);
+});
+
+/* ---------- dials ---------- */
+function syncDials(){
+  $('#gatheropts').innerHTML=MODEKEYS.map(k=>`<button class="dopt ${S.gather===k?'on':''}" data-g="${k}">${MODES[k].name}</button>`).join('');
+  $('#paintopts').innerHTML=MODEKEYS.map(k=>`<button class="dopt ${S.paint===k?'on':''}" data-p="${k}">${MODES[k].name}</button>`).join('');
+  const g=MODES[S.gather].name,p=MODES[S.paint].name;
+  $('#dsum').textContent= g===p?`by ${g}`:`${g} · painted by ${p}`;
+}
+$('#dialbtn').addEventListener('click',()=>{coach('dial');showSheet($('#dials'))});
+$('#dials').addEventListener('click',e=>{
+  const b=e.target.closest('.dopt');if(!b)return;
+  if(b.dataset.g)setGather(b.dataset.g);
+  if(b.dataset.p)setPaint(b.dataset.p);
+});
+
+/* ---------- search ---------- */
+$('#searchpill').addEventListener('click',()=>{$('#searchopen').classList.add('on');$('#searchinput').value='';$('#sresults').innerHTML='';setTimeout(()=>$('#searchinput').focus(),60)});
+$('#searchopen').addEventListener('click',e=>{if(e.target.id==='searchopen')$('#searchopen').classList.remove('on')});
+$('#searchinput').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  if(q.length<2){$('#sresults').innerHTML='';return}
+  const hits=[];
+  for(const c of COMPANIES){
+    const nm=c.name.toLowerCase(),sy=c.sym.toLowerCase();
+    let via=null,ok=nm.includes(q)||sy.includes(q);
+    if(!ok){const al=c.aliases.find(a=>a.toLowerCase().includes(q));if(al){ok=true;via=al}}
+    if(ok)hits.push({c,via});
+    if(hits.length>=8)break;
+  }
+  const P=MODES[S.paint];
+  $('#sresults').innerHTML=hits.map(h=>`<button class="sres" data-sym="${h.c.sym}">
+    <span class="dotc" style="background:${P.color(P.of(h.c))}"></span>
+    <span><span class="nm">${esc(h.c.name)}</span>${h.via?` <span class="via">via ${esc(h.via)}</span>`:''}<br><span class="via">${SECTORS[h.c.sector].label}</span></span></button>`).join('')
+    ||`<p style="color:var(--muted);font-family:var(--serif);font-style:italic;padding:12px 6px">no one by that name here yet</p>`;
+});
+$('#sresults').addEventListener('click',e=>{
+  const b=e.target.closest('.sres');if(!b)return;
+  $('#searchopen').classList.remove('on');
+  const o=CIRC[b.dataset.sym];
+  animCam({x:o.x,y:o.y,z:Math.max(cam.z,fitZ*2.4)},850);
+  setTimeout(()=>openCard(b.dataset.sym,'search'),880);
+});
+
+/* ---------- trail & gravity ---------- */
+function trail(sym,type,extra){S.trail.push({sym,type,day:S.day,t:Date.now(),extra:extra||null});if(S.trail.length>600)S.trail=S.trail.slice(-500);save()}
+const GW={open:1,hold:3,thread:1.6,search:1.3,facet:0.25};
+function gravity(sym){
+  let g=0;for(const e of S.trail){if(e.sym!==sym)continue;
+    g+=(GW[e.type]||0)*Math.pow(0.5,(S.day-e.day)/21)}
+  return g;
+}
+function noticeCount(sym){return S.trail.filter(e=>e.sym===sym&&(e.type==='open'||e.type==='hold')).length}
+function inviteEligible(sym){
+  if(S.hunches.some(h=>h.sym===sym&&h.status==='open'))return false;
+  if(S.declined[sym]!=null&&S.day-S.declined[sym]<14)return false;
+  const ev=S.trail.filter(e=>e.sym===sym&&e.type!=='facet');
+  const days=new Set(ev.map(e=>e.day));
+  const holds=ev.filter(e=>e.type==='hold').length;
+  return ev.length>=3&&days.size>=2&&holds>=1&&gravity(sym)>=4;
+}
+
+/* ---------- the card ---------- */
+let cardSym=null,deckIdx=0,deckFacets=[];
+function buildDeck(c){
+  const P=MODES[S.paint],pk=P.of(c),sg=sig(c),d=DECKS[c.sym],f=[];
+  const painted=S.paint!=='sector'&&S.paint!=='size';
+  if(painted){
+    const key=S.paint,phr={strength:strengthPhrase,price:pricePhrase,money:moneyPhrase}[key](c);
+    const cn={run:'warm',cheap:'teal',pricey:'rose',in:'violet',out:'grey',cool:'cool',steady:'sand',fair:'sand',quiet:'sand'}[pk]||'this colour';
+    f.push({label:`why she\u2019s ${cn}`,stmt:phr[0].toUpperCase()+phr.slice(1)+'.',
+      tell:'How this is read: '+({strength:'her three and six-month price move, and how close she sits to her 52-week high — '+sg.m3+'% in 3 months, at '+sg.hi52+'% of her high.',
+        price:'today\u2019s price against her own five-year history of earnings — currently at the '+sg.pcl+'th percentile of her usual range.',
+        money:'the quarter-over-quarter change in foreign institutional holding from shareholding disclosures — '+(sg.fii>0?'+':'')+sg.fii+' percentage points last quarter.'})[key]});
+  }
+  f.push({label:'what she sells',stmt:d?d.sells:c.identity});
+  if(d){
+    // re-rank: strongest stories first
+    const rest=[
+      {label:'how the money works',stmt:d.money},
+      {label:'who runs it',stmt:d.runs},
+      {label:sg.strength==='run'?'what\u2019s fueling it':'what changed lately',stmt:d.fueling},
+    ];
+    if(sg.strength==='run')rest.unshift(rest.splice(2,1)[0]);
+    f.push(...rest);
+  } else {
+    const t=SECT_TPL[c.sector];
+    f.push({label:'how the money works',stmt:t.money});
+  }
+  f.push({label:'what could go wrong',stmt:(d?d.wrong:SECT_TPL[c.sector].wrong)+(c.temper==='lively'&&sg.strength==='run'?' Runs this hot, cools this fast.':'')});
+  if(!painted||S.paint!=='price')f.push({label:'what it costs',stmt:pricePhrase(c)[0].toUpperCase()+pricePhrase(c).slice(1)+'.',
+    tell:'How this is read: today\u2019s price against her own history of earnings, not against other companies.'});
+  return f;
+}
+function openCard(sym,how){
+  const o=CIRC[sym],c=o.c;
+  cardSym=sym;deckIdx=0;deckFacets=buildDeck(c);
+  trail(sym,how==='hold'?'open':how);
+  coach('bloom');
+  const P=MODES[S.paint],col=P.color(P.of(c));
+  // bloom morph from circle to card
+  const b=$('#bloom');
+  const sx=o._sx??w2sX(o.x),sy=o._sy??w2sY(o.y),sr=Math.max(6,o._sr??o.r*cam.z);
+  b.style.cssText=`display:block;left:${sx-sr}px;top:${sy-sr}px;width:${sr*2}px;height:${sr*2}px;background:${col};border-radius:50%;position:fixed`;
+  $('#fieldveil').classList.add('on');
+  const wrap=$('#cardwrap');wrap.classList.add('on');
+  const card=$('#card');card.style.background=mixCard(col);
+  renderCard(c,col);
+  requestAnimationFrame(()=>{
+    const r=card.getBoundingClientRect();
+    const anim=b.animate([
+      {left:sx-sr+'px',top:sy-sr+'px',width:sr*2+'px',height:sr*2+'px',borderRadius:'50%'},
+      {left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',borderRadius:'30px'}
+    ],{duration:reduceMotion?120:420,easing:'cubic-bezier(.32,.72,.28,1)',fill:'forwards'});
+    anim.onfinish=()=>{card.classList.add('vis');setTimeout(()=>b.style.display='none',80)};
   });
-  const n=byId('snext'); if(n) n.onclick=()=>{ openSheet(confirmStep(s)); wireConfirm(s); };
+  // invitation check on encounter
+  if(inviteEligible(sym))setTimeout(()=>{if(cardSym===sym)showInvite(sym)},1400);
 }
-function noteHtml(th, sym, dated){
-  const r=REASONS.find(x=>x.k===th.reasonType);
-  return `<div class="note"><p class="qt">Betting <b>UP</b> on ${esc(stock(sym).name)} because <b>${esc(th.reasonText)}</b> <span class="tiny">(${r?r.label.toLowerCase():''})</span> — expecting <b>+${th.target}%</b> within <b>${th.horizon} market days</b>.</p>
-  <p class="sig">— you, day ${dated} · private until this resolves</p></div>`;
+function mixCard(col){
+  if(col.startsWith('#'))return mixHex('#F7F1E6',col,0.45);
+  const m=col.match(/rgb\((\d+),(\d+),(\d+)\)/);if(!m)return '#F7F1E6';
+  const A=hexRGB('#F7F1E6');
+  return`rgb(${Math.round(lerp(A[0],+m[1],.45))},${Math.round(lerp(A[1],+m[2],.45))},${Math.round(lerp(A[2],+m[3],.45))})`;
 }
-function confirmStep(s){
-  const cur=price(s.sym);
-  return `<p class="eyebrow">Step 3 of 3 · The call</p>
-  <h2 class="script" style="font-size:23px;margin:6px 0 14px">Read it back.</h2>
-  ${noteHtml(draft, draft.sym, S.day)}
-  <div class="spread" style="margin:16px 0">
-    <div class="pair"><span class="term mono" style="font-size:16px">${fmt(draft.amount)}</span><span class="plain">virtual capital in</span></div>
-    <div class="pair" style="text-align:right"><span class="term mono" style="font-size:16px">${fmt(cur)}</span><span class="plain">entry price · live-tracked</span></div>
-  </div>
-  <button class="btn btn-primary" id="exec">Place the call</button>
-  <button class="btn btn-quiet" onclick="closeSheet()" style="width:100%">Not yet</button>
-  <p class="tiny" style="text-align:center;margin-top:6px">Virtual money in v1. Real broker execution (Kite / Groww / Upstox) lands in v2 — this exact screen will resurface your thesis before any real order fires.</p>`;
+function renderCard(c,col){
+  const sg=sig(c),nc=noticeCount(c.sym);
+  const sigline={run:'glowing warm · she\u2019s on a run',cool:'cooling · drifting off her highs',steady:'steady · no drama lately'}[sg.strength];
+  const th=(THREADS[c.sym]||[]).filter(t=>BY[t[0]]).slice(0,3);
+  const held=(S.holds[c.sym]||0)>0;
+  $('#card').innerHTML=`
+   <div class="chd"><span class="chip-dot" style="background:${col}"></span><h2>${esc(c.name)}</h2></div>
+   <p class="sigline">${sigline}</p>
+   ${nc>=3?`<p class="noticeline">you keep noticing this one — ${nc} times now</p>`:''}
+   <div id="deck">${deckFacets.map((f,i)=>`<div class="facet ${i===0?'on':''}" data-i="${i}">
+      <span class="label">${esc(f.label)}</span><p class="stmt">${esc(f.stmt)}</p>
+      ${f.tell?`<button class="tellmore">tell me more</button><p class="tellbody">${esc(f.tell)}</p>`:''}</div>`).join('')}</div>
+   <div id="pager">${deckFacets.map((_,i)=>`<span class="pd ${i===0?'on':''}"></span>`).join('')}</div>
+   <p class="pricetemp">${fmtR(price(c.sym,S.day))} a share · <em>${TEMPER_TXT[c.temper]}</em></p>
+   ${th.length?`<div class="threads"><span class="label">her world</span>${th.map(t=>`<button class="thread" data-t="${t[0]}">${esc(t[1])}: ${esc(BY[t[0]].name)} <span class="arrow">→</span></button>`).join('')}</div>`:''}
+   <div id="eyerow"><span id="eyehint">${held?'she stays with you':'hold if she stays with you'}</span>
+     <button id="eyebtn" class="${held?'held':''}" aria-label="hold if she stays with you">
+       <svg id="eyering" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31"/></svg>
+       <svg class="eyeicon" viewBox="0 0 24 24" fill="none" stroke-width="1.7"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6" fill="${held?'#D8794A':'none'}" stroke="currentColor"/></svg>
+     </button></div>
+   <button id="writebtn" class="${inviteEligible(c.sym)?'':''}">put your hunch down</button>`;
+  wireCard(c);
 }
-function wireConfirm(s){
-  byId('exec').onclick=async ()=>{
-    const drivers=['fundamentals','momentum','story'];
-    const c=collOf(s.coll);
-    /* hidden actual driver, weighted by collection tier — revealed at verdict */
-    const seed=(s.sym.charCodeAt(0)+S.day*13)%10;
-    const actual = c.tier==='momentum' ? (seed<5?'momentum':seed<8?'story':'fundamentals')
-                                       : (seed<5?'fundamentals':seed<8?'story':'momentum');
-    S.positions.push({ id:Date.now(), sym:s.sym, amount:draft.amount, entry:price(s.sym),
-      openedDay:S.day, actualDriver:actual,
-      thesis:{reasonType:draft.reasonType, reasonText:draft.reasonText, target:draft.target, byDay:S.day+draft.horizon} });
-    await persist(); closeSheet(); go('home'); toast('Call placed. Now we wait — that\'s the hard part.');
-  };
-}
-
-/* ---------------- portfolio + verdicts ---------------- */
-function viewPortfolio(){
-  return `<div class="view">
-    <div class="topbar"><span class="brand">hunch<em>.</em></span>
-      <span class="demo-pill">day ${S.day} · demo prices <button id="tick">advance ›</button></span></div>
-    <h1 style="font-size:26px;margin-bottom:4px">Your record</h1>
-    <p class="small" style="margin-bottom:20px">Tracked against <em>${esc(S.goal.name)}</em> — the goal is the scoreboard, not raw P&amp;L.</p>
-    ${goalMeter()}
-    <p class="eyebrow" style="margin:24px 0 12px">Open calls</p>
-    ${S.positions.length? S.positions.map(posRow).join(''):'<p class="small" style="margin-bottom:8px">None open. The market will still be here tomorrow.</p>'}
-    <p class="eyebrow" style="margin:24px 0 12px">Resolved</p>
-    ${S.closed.length? S.closed.slice().reverse().map(closedRow).join(''):'<p class="small">Verdicts land here when a call hits its date, its target, or you close it.</p>'}
-  </div>`;
-}
-function closedRow(p){
-  const cls=p.verdict==='Called it'?'v-called':p.verdict==='Missed it'?'v-missed':'v-partial';
-  return `<button class="pos" data-closed="${p.id}"><div class="spread">
-    <div><strong>${esc(stock(p.sym).name)}</strong><div class="tiny mono">${pct(p.finalPct)} vs target ${pct(p.thesis.target)}</div></div>
-    <span class="verdict-stamp ${cls}" style="font-size:14px;padding:3px 10px">${p.verdict}</span>
-  </div></button>`;
-}
-function judge(p, finalPrice){
-  const finalPct=((finalPrice/p.entry)-1)*100;
-  const reached=finalPct>=p.thesis.target;
-  const match=p.actualDriver===p.thesis.reasonType;
-  let verdict, why;
-  const DRIVERLINE={fundamentals:'the quarter\'s numbers did the lifting', momentum:'the price trend carried it — flows, not fundamentals', story:'the narrative/catalyst moved it, not the underlying numbers'};
-  if(reached && match){ verdict='Called it'; why='Target hit, and for the reason you named. That\'s the whole game.'; }
-  else if(reached){ verdict='Right for the wrong reason'; why=`Target hit — but ${DRIVERLINE[p.actualDriver]}. You banked the gain; bank the lesson too.`; }
-  else { verdict='Missed it'; why= finalPct>0? 'Direction right, target too ambitious for the window. Closer than the stamp suggests.' : 'The thesis didn\'t play out in this window. That\'s tuition, not failure.'; }
-  return { ...p, finalPrice, finalPct, proceeds:p.amount*(finalPrice/p.entry), verdict, why, closedDay:S.day };
-}
-function resolvePosition(id, manual){
-  const i=S.positions.findIndex(x=>x.id===id); if(i<0) return;
-  const p=S.positions[i]; const r=judge(p, price(p.sym));
-  S.positions.splice(i,1); S.closed.push(r); persist();
-  showVerdict(r);
-}
-function showVerdict(r){
-  const cls=r.verdict==='Called it'?'v-called':r.verdict==='Missed it'?'v-missed':'v-partial';
-  openSheet(`
-    <p class="eyebrow" style="margin-bottom:10px">The verdict · ${esc(stock(r.sym).name)}</p>
-    <div style="text-align:center;margin:10px 0 18px"><span class="verdict-stamp ${cls}">${r.verdict}</span></div>
-    ${noteHtml(r.thesis, r.sym, r.openedDay)}
-    <div class="spread" style="margin:16px 0">
-      <div class="pair"><span class="term mono ${r.finalPct>=0?'up':'down'}" style="font-size:16px">${pct(r.finalPct)}</span><span class="plain">actual move</span></div>
-      <div class="pair" style="text-align:right"><span class="term mono" style="font-size:16px">+${r.thesis.target}%</span><span class="plain">you expected</span></div>
-    </div>
-    <p class="small" style="margin-bottom:16px">${r.why}</p>
-    <button class="btn btn-ghost" id="shareV">Share this verdict</button>
-    <p class="tiny" style="text-align:center;margin-top:8px">Sharing is opt-in, only ever after resolution. Skipping it is a fine choice.</p>
-    <button class="btn btn-quiet" style="width:100%" onclick="closeSheet();render()">Done</button>
-  `);
-  byId('shareV').onclick=()=>{
-    const txt=`${r.verdict} — ${stock(r.sym).name}: called +${r.thesis.target}%, got ${pct(r.finalPct)}. My reason: "${r.thesis.reasonText}". (hunch.)`;
-    if(navigator.share){ navigator.share({text:txt}).catch(()=>{}); }
-    else { navigator.clipboard && navigator.clipboard.writeText(txt); toast('Copied — paste it anywhere.'); }
-  };
-}
-function openPosition(id){
-  const p=S.positions.find(x=>x.id===id); if(!p) return;
-  const cur=price(p.sym), ch=((cur/p.entry)-1)*100;
-  openSheet(`
-    <p class="eyebrow" style="margin-bottom:6px">Open call · ${esc(stock(p.sym).name)}</p>
-    ${noteHtml(p.thesis,p.sym,p.openedDay)}
-    <div class="spread" style="margin:16px 0">
-      <div class="pair"><span class="term mono ${ch>=0?'up':'down'}" style="font-size:16px">${pct(ch)}</span><span class="plain">since entry (${fmt(p.entry)} → ${fmt(cur)})</span></div>
-      <div class="pair" style="text-align:right"><span class="term mono" style="font-size:16px">day ${p.thesis.byDay}</span><span class="plain">deadline (${p.thesis.byDay-S.day} to go)</span></div>
-    </div>
-    <button class="btn btn-ghost" id="closeP">Close &amp; get the verdict</button>
-    <button class="btn btn-quiet" style="width:100%" onclick="closeSheet()">Let it ride</button>
-  `);
-  byId('closeP').onclick=()=>resolvePosition(id,true);
-}
-
-/* ---------------- market clock ---------------- */
-async function advanceDay(){
-  S.day++; S.prices=PriceFeed.advance(S.prices, S.day);
-  /* auto-resolve calls whose date passed */
-  const due=S.positions.filter(p=>S.day>=p.thesis.byDay);
-  const rest=S.positions.filter(p=>S.day<p.thesis.byDay);
-  let last=null;
-  for(const p of due){ last=judge(p, price(p.sym)); S.closed.push(last); }
-  S.positions=rest;
-  await persist(); render();
-  if(last) showVerdict(last); else toast(`Day ${S.day} — prices moved.`);
-}
-
-/* ---------------- event wiring ---------------- */
-function wire(){
-  document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>go(b.dataset.nav));
-  document.querySelectorAll('[data-coll]').forEach(b=>b.onclick=()=>{S.coll=b.dataset.coll;S.cardIdx=0;markViewed(0);go('collection');});
-  document.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>openPosition(+b.dataset.pos));
-  document.querySelectorAll('[data-closed]').forEach(b=>b.onclick=()=>{const r=S.closed.find(x=>x.id===+b.dataset.closed); if(r) showVerdict(r);});
-  document.querySelectorAll('.casebtn').forEach(b=>b.onclick=()=>{const c=byId('case-'+b.dataset.sym);const open=c.classList.toggle('open');b.setAttribute('aria-expanded',open);b.textContent=open?'Close the case file ↑':'Open the case file ↓';});
-  document.querySelectorAll('.callbtn').forEach(b=>b.onclick=()=>startCall(b.dataset.sym));
-  const tick=byId('tick'); if(tick) tick.onclick=advanceDay;
-  /* onboarding */
-  const gmk=byId('gmk');
-  if(gmk){
-    const upd=()=>{gmk.disabled=!(byId('gname').value.trim()&&(+byId('gamt').value)>0);};
-    byId('gname').oninput=upd; byId('gamt').oninput=upd;
-    document.querySelectorAll('.gsug').forEach(c=>c.onclick=()=>{byId('gname').value=c.textContent;upd();});
-    document.querySelectorAll('.mo').forEach(c=>c.onclick=()=>{document.querySelectorAll('.mo').forEach(x=>x.classList.remove('on'));c.classList.add('on');});
-    gmk.onclick=async ()=>{
-      const m=+document.querySelector('.mo.on').dataset.m;
-      S.goal={name:byId('gname').value.trim(), target:+byId('gamt').value, months:m, riskPct:25};
-      await persist(); go('discover');
-    };
+function wireCard(c){
+  const deck=$('#deck');
+  deck.addEventListener('click',e=>{
+    if(e.target.classList.contains('tellmore')){e.target.nextElementSibling.classList.toggle('on');return}
+    flipDeck(1);
+  });
+  let sx0=null;
+  deck.addEventListener('pointerdown',e=>sx0=e.clientX);
+  deck.addEventListener('pointerup',e=>{if(sx0!=null&&Math.abs(e.clientX-sx0)>44)flipDeck(e.clientX<sx0?1:-1),sx0=null});
+  document.querySelectorAll('.thread').forEach(b=>b.addEventListener('click',()=>{
+    const to=b.dataset.t;
+    closeCard(()=>{const o=CIRC[to];animCam({x:o.x,y:o.y,z:Math.max(cam.z,fitZ*2.4)},750);setTimeout(()=>openCard(to,'thread'),780)});
+  }));
+  // the eye — press and hold
+  const eb=$('#eyebtn'),ring=$('#eyering circle');let hold0=null,raf=null,done=false;
+  const HOLD=650;
+  function step(){if(hold0==null)return;const p=clamp((performance.now()-hold0)/HOLD,0,1);
+    ring.style.strokeDashoffset=194*(1-p);
+    if(p>=1&&!done){done=true;commitHold(c)}else if(p<1)raf=requestAnimationFrame(step)}
+  eb.addEventListener('pointerdown',e=>{e.preventDefault();done=false;hold0=performance.now();step()});
+  const cancel=()=>{hold0=null;cancelAnimationFrame(raf);if(!done)ring.style.strokeDashoffset=194};
+  eb.addEventListener('pointerup',cancel);eb.addEventListener('pointerleave',cancel);
+  function commitHold(c){
+    haptic(18);
+    S.holds[c.sym]=(S.holds[c.sym]||0)+1;trail(c.sym,'hold',{paint:S.paint,facet:deckFacets[deckIdx]?.label});
+    eb.classList.add('held');$('#eyehint').textContent='she stays with you';
+    eb.querySelector('.eyeicon circle').setAttribute('fill','#D8794A');
+    save();
+    if(inviteEligible(c.sym))setTimeout(()=>{if(cardSym===c.sym)showInvite(c.sym)},900);
   }
-  /* card stack: track index, mark viewed, trigger nudge */
-  const stack=byId('stack');
-  if(stack){
-    let t;
-    stack.addEventListener('scroll',()=>{
-      clearTimeout(t);
-      t=setTimeout(()=>{
-        const w=stack.querySelector('.scard').offsetWidth+14;
-        const i=Math.round(stack.scrollLeft/w);
-        if(i!==S.cardIdx){ S.cardIdx=i; markViewed(i);
-          document.querySelectorAll('#dots i').forEach((d,j)=>d.classList.toggle('on',j===i)); }
-      },80);
-    },{passive:true});
-  }
+  $('#writebtn').addEventListener('click',()=>openComposer(c.sym));
+  if(gravity(c.sym)>=2.5&&!S.hunches.some(h=>h.sym===c.sym&&h.status==='open'))$('#writebtn').classList.add('show');
 }
-function markViewed(i){
-  const list=STOCKS.filter(s=>s.coll===S.coll); const s=list[i]; if(!s) return;
-  S.viewed[S.coll]=S.viewed[S.coll]||[];
-  if(!S.viewed[S.coll].includes(s.sym)){ S.viewed[S.coll].push(s.sym); persist(); }
-  maybeNudge();
+function flipDeck(dir){
+  const n=deckFacets.length;deckIdx=(deckIdx+dir+n)%n;
+  document.querySelectorAll('#deck .facet').forEach(f=>f.classList.toggle('on',+f.dataset.i===deckIdx));
+  document.querySelectorAll('#pager .pd').forEach((p,i)=>p.classList.toggle('on',i===deckIdx));
+  if(cardSym)trail(cardSym,'facet',{label:deckFacets[deckIdx]?.label});
+}
+function closeCard(after){
+  const card=$('#card'),o=CIRC[cardSym];
+  card.classList.remove('vis');
+  const b=$('#bloom');
+  if(o&&o._sx!==undefined&&!reduceMotion){
+    const r=card.getBoundingClientRect();
+    b.style.cssText=`display:block;position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:30px;background:${MODES[S.paint].color(MODES[S.paint].of(o.c))}`;
+    const sr=Math.max(6,o._sr||10);
+    b.animate([{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',borderRadius:'30px',opacity:1},
+      {left:(o._sx-sr)+'px',top:(o._sy-sr)+'px',width:sr*2+'px',height:sr*2+'px',borderRadius:'50%',opacity:.9}],
+      {duration:340,easing:'cubic-bezier(.32,.72,.28,1)'}).onfinish=()=>b.style.display='none';
+  }
+  setTimeout(()=>{$('#cardwrap').classList.remove('on');$('#fieldveil').classList.remove('on');cardSym=null;if(after)after()},reduceMotion?60:120);
+}
+$('#cardwrap').addEventListener('click',e=>{if(e.target.id==='cardwrap')closeCard()});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){if(cardSym)closeCard();else if($('#yours').classList.contains('on'))closeYours()}});
+
+/* ---------- invitation ---------- */
+let inviteSym=null;
+function showInvite(sym){
+  inviteSym=sym;const c=BY[sym];
+  const ev=S.trail.filter(e=>e.sym===sym);
+  const frags=[];
+  const fac=[...new Set(ev.filter(e=>e.type==='facet'&&e.extra&&e.extra.label).map(e=>e.extra.label))].slice(0,2);
+  fac.forEach(l=>frags.push(`you lingered on \u201c${l}\u201d`));
+  const hold=ev.filter(e=>e.type==='hold').slice(-1)[0];
+  if(hold&&hold.extra&&hold.extra.paint&&hold.extra.paint!=='sector')frags.push(`you held her while the field was painted by ${MODES[hold.extra.paint].name}`);
+  if(ev.some(e=>e.type==='thread'))frags.push('you arrived once by following her world');
+  if(ev.some(e=>e.type==='search'))frags.push('you went looking for her by name');
+  if(!frags.length)frags.push('you keep coming back to her card');
+  $('#invite').innerHTML=`<div class="grab"></div>
+    <p class="bigserif">You\u2019ve come back to ${esc(c.name)} ${noticeCount(sym)} times.</p>
+    <div style="margin:16px 0 4px"><span class="label">what caught your eye</span></div>
+    ${frags.map(f=>`<p class="trailfrag">${esc(f)}</p>`).join('')}
+    <p class="bigserif" style="margin-top:20px;font-size:20px">Want to put your hunch down?</p>
+    <div class="btnrow"><button class="btn-ink" id="inv-yes">write my hunch</button>
+    <button class="btn-quiet" id="inv-no">keep browsing</button></div>`;
+  showSheet($('#invite'));
+  $('#inv-yes').addEventListener('click',()=>{hideSheet($('#invite'));openComposer(sym)});
+  $('#inv-no').addEventListener('click',declineInvite);
+}
+function declineInvite(){if(inviteSym){S.declined[inviteSym]=S.day;save();inviteSym=null}hideSheet($('#invite'))}
+
+/* ---------- composer ---------- */
+let cs=null;
+const DIRS=[['climb','she\u2019ll climb'],['steady','she\u2019ll hold steady'],['fall','she\u2019ll fall']];
+const HORIZONS=[['q','by next quarter',63],['h','in six months',126],['y','within a year',252]];
+function reasonChips(c){
+  const sg=sig(c),out=[];
+  out.push(strengthPhrase(c).split(' — ')[0]);
+  out.push(pricePhrase(c).split(' — ')[0]);
+  out.push(moneyPhrase(c).split(' — ')[0]);
+  out.push('I know and use what she sells');
+  if(DECKS[c.sym]){out.push('I trust who runs her');out.push('what\u2019s fueling her convinced me')}
+  const fac=[...new Set(S.trail.filter(e=>e.sym===c.sym&&e.type==='facet'&&e.extra).map(e=>e.extra.label))];
+  if(fac.includes('what could go wrong'))out.push('I\u2019ve read what could go wrong, and I\u2019m in anyway');
+  if(S.trail.some(e=>e.sym===c.sym&&e.type==='thread'))out.push('her world pointed me here');
+  return [...new Set(out)].slice(0,7);
+}
+function openComposer(sym){
+  if(cardSym)closeCard();
+  const c=BY[sym];cs={sym,dir:null,frags:[],free:'',horizon:null};
+  const chips=reasonChips(c);
+  $('#composer').innerHTML=`<div class="grab"></div>
+   <span class="label">your hunch on ${esc(c.name)}</span>
+   <p class="sentence">I think <span class="blank" id="dirblank">she\u2019ll \u2026</span><br>because <span class="blank" id="whyblank">\u2026</span></p>
+   <div class="chiprow" id="dirchips">${DIRS.map(d=>`<button class="cchip" data-d="${d[0]}">${d[1]}</button>`).join('')}</div>
+   <span class="label">from your trail</span>
+   <div class="chiprow" id="fragchips">${chips.map((f,i)=>`<button class="cchip" data-f="${i}">${esc(f)}</button>`).join('')}</div>
+   <textarea id="reasonbox" placeholder="\u2026and anything in your own words" rows="2"></textarea>
+   <div style="margin-top:16px"><span class="label">by when</span></div>
+   <div class="chiprow" id="hchips">${HORIZONS.map(h=>`<button class="cchip" data-h="${h[0]}">${h[1]}</button>`).join('')}</div>
+   <div class="btnrow"><button class="btn-ink" id="savehunch" style="opacity:.4">put it down</button></div>`;
+  showSheet($('#composer'));
+  const upd=()=>{
+    $('#dirblank').textContent=cs.dir?DIRS.find(d=>d[0]===cs.dir)[1]:'she\u2019ll \u2026';
+    $('#dirblank').classList.toggle('filled',!!cs.dir);
+    const why=[...cs.frags.map(i=>chips[i]),cs.free.trim()].filter(Boolean).join(' · ');
+    $('#whyblank').textContent=why||'\u2026';$('#whyblank').classList.toggle('filled',!!why);
+    $('#savehunch').style.opacity=(cs.dir&&cs.horizon&&(cs.frags.length||cs.free.trim()))?1:.4;
+  };
+  $('#dirchips').addEventListener('click',e=>{const b=e.target.closest('.cchip');if(!b)return;cs.dir=b.dataset.d;
+    document.querySelectorAll('#dirchips .cchip').forEach(x=>x.classList.toggle('on',x===b));upd()});
+  $('#fragchips').addEventListener('click',e=>{const b=e.target.closest('.cchip');if(!b)return;const i=+b.dataset.f;
+    cs.frags=cs.frags.includes(i)?cs.frags.filter(x=>x!==i):[...cs.frags,i];b.classList.toggle('on');upd()});
+  $('#hchips').addEventListener('click',e=>{const b=e.target.closest('.cchip');if(!b)return;cs.horizon=b.dataset.h;
+    document.querySelectorAll('#hchips .cchip').forEach(x=>x.classList.toggle('on',x===b));upd()});
+  $('#reasonbox').addEventListener('input',e=>{cs.free=e.target.value;upd()});
+  $('#savehunch').addEventListener('click',()=>{
+    if(!(cs.dir&&cs.horizon&&(cs.frags.length||cs.free.trim())))return;
+    cs.reason=[...cs.frags.map(i=>chips[i]),cs.free.trim()].filter(Boolean).join(' · ');
+    hideSheet($('#composer'));
+    if(!S.goal)openGoal(()=>ceremonyThenSize());else ceremonyThenSize();
+  });
+}
+function hunchSentence(h){const c=BY[h.sym],d=DIRS.find(x=>x[0]===h.dir)[1],hz=HORIZONS.find(x=>x[0]===h.horizon)[1];
+  return`I think ${d.replace('she\u2019ll',c.name+' will')} ${hz} because ${h.reason}`}
+function ceremonyThenSize(){
+  const c=BY[cs.sym];
+  $('#ceremony').innerHTML=`<p>\u201cI think ${esc(DIRS.find(d=>d[0]===cs.dir)[1])} because ${esc(cs.reason)}.\u201d<br><br><span style="font-size:16px;color:var(--sec)">— your hunch on ${esc(c.name)}, in ink</span></p>`;
+  $('#ceremony').classList.add('on');haptic([10,60,14]);
+  setTimeout(()=>{$('#ceremony').classList.remove('on');openSizing()},reduceMotion?400:2100);
 }
 
-/* ---------------- boot ---------------- */
-(async function init(){
-  const saved=await Store.load();
-  if(saved) S=Object.assign(S,saved);
-  if(!Object.keys(S.prices).length){ for(const s of STOCKS) S.prices[s.sym]=s.price; }
-  render();
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
-})();
+/* ---------- goal ---------- */
+function openGoal(after){
+  $('#goalsheet').innerHTML=`<div class="grab"></div>
+   <p class="bigserif">What\u2019s this money for?</p>
+   <p style="color:var(--sec);font-size:13.5px;margin:6px 0 16px">Paper money — but a real goal makes sizing honest.</p>
+   <div class="chiprow">${['Goa \u00b7 March','an emergency cushion','a sabbatical fund','new camera \u00b7 December'].map(g=>`<button class="cchip gsug">${g}</button>`).join('')}</div>
+   <input id="gname" placeholder="name it \u2014 e.g. Goa \u00b7 March" maxlength="40" style="margin:6px 0 12px">
+   <input id="gamt" type="number" inputmode="numeric" placeholder="how much \u2014 e.g. 40000">
+   <div class="btnrow"><button class="btn-ink" id="gset">keep this goal</button></div>`;
+  showSheet($('#goalsheet'));
+  document.querySelectorAll('.gsug').forEach(b=>b.addEventListener('click',()=>{$('#gname').value=b.textContent}));
+  $('#gset').addEventListener('click',()=>{
+    const name=$('#gname').value.trim()||'my goal',amt=Math.max(5000,+$('#gamt').value||40000);
+    S.goal={name,amount:amt};save();hideSheet($('#goalsheet'));if(after)after();
+  });
+}
+
+/* ---------- sizing ---------- */
+const BANDS={curious:[2,3],fairly:[4,6],sure:[8,10]};
+const NOTCHES=[['curious','curious'],['fairly','fairly sure'],['sure','sure']];
+function openSizing(){
+  const c=BY[cs.sym];cs.sure='fairly';
+  $('#sizesheet').innerHTML=`<div class="grab"></div>
+   <span class="label">sizing \u2014 ${esc(c.name)}</span>
+   <p class="bigserif" style="margin:8px 0 4px">How sure are you?</p>
+   <div class="sure">${NOTCHES.map(n=>`<button class="notch ${n[0]==='fairly'?'on':''}" data-n="${n[0]}">${n[1]}</button>`).join('')}</div>
+   <p id="sizesent"></p>
+   <input type="range" id="sizeslider" min="0" max="1000" value="0">
+   <p id="bandnote"></p>
+   <div class="btnrow"><button class="btn-ink" id="sizeok">book it, on paper</button></div>`;
+  showSheet($('#sizesheet'));
+  const corpus=S.goal.amount;
+  const lively=c.temper==='lively';
+  function band(){const b=BANDS[cs.sure];return lively?[b[0],b[0]+(b[1]-b[0])*0.45]:b}
+  function defAmt(){const b=band();return corpus*(lively?b[0]:(b[0]+b[1])/2)/100}
+  const CAP=corpus*0.15;
+  let amt=defAmt();
+  const slider=$('#sizeslider');
+  function amtFromRaw(raw){ // soft resistance beyond band top
+    const b=band(),top=corpus*b[1]/100;
+    const lin=corpus*0.005+ (raw/1000)*(CAP*1.35-corpus*0.005);
+    return lin<=top?lin:top+(lin-top)*0.42;
+  }
+  function rawFromAmt(a){const b=band(),top=corpus*b[1]/100;
+    const lin=a<=top?a:top+(a-top)/0.42;
+    return clamp((lin-corpus*0.005)/(CAP*1.35-corpus*0.005)*1000,0,1000)}
+  function paint(){
+    const b=band(),top=corpus*b[1]/100,over=amt>top,hard=amt>CAP*0.999;
+    amt=Math.min(amt,CAP);
+    const sw=NOTCHES.find(n=>n[0]===cs.sure)[1];
+    $('#sizesent').innerHTML=`${sw[0].toUpperCase()+sw.slice(1)} about a ${c.temper} company \u2014 <span id="sizeamt" style="color:${over?'#D8794A':'#221E17'}">${fmtR(amt)}</span> of your ${fmtR(corpus)} ${over?'is more than that usually means':'feels right'}.`;
+    $('#bandnote').textContent= hard?'that\u2019s the 15% ceiling for one company — a felt guardrail, not a wall':
+      over?'above the usual band for \u201c'+sw+'\u201d — your call, it\u2019s your paper':'';
+  }
+  slider.value=rawFromAmt(amt);paint();
+  slider.addEventListener('input',()=>{amt=Math.round(amtFromRaw(+slider.value)/100)*100;amt=clamp(amt,corpus*0.005,CAP);paint()});
+  document.querySelectorAll('.notch').forEach(n=>n.addEventListener('click',()=>{
+    cs.sure=n.dataset.n;document.querySelectorAll('.notch').forEach(x=>x.classList.toggle('on',x===n));
+    amt=defAmt();slider.value=rawFromAmt(amt);paint();
+  }));
+  $('#sizeok').addEventListener('click',()=>{
+    const h={id:'h'+Date.now(),sym:cs.sym,dir:cs.dir,reason:cs.reason,horizon:cs.horizon,
+      horizonD:HORIZONS.find(x=>x[0]===cs.horizon)[2],startDay:S.day,
+      entry:price(cs.sym,S.day),idx0:indexLevel(S.day),amount:Math.round(amt),status:'open'};
+    S.hunches.push(h);S.holds[cs.sym]=(S.holds[cs.sym]||0)+1;save();
+    hideSheet($('#sizesheet'));cs=null;
+    showWhisper('booked at today\u2019s close, on paper — she\u2019s ringed in ink now',3400);
+  });
+}
+
+/* ---------- verdicts ---------- */
+function resolveDue(){
+  for(const h of S.hunches){
+    if(h.status!=='open')continue;
+    if(S.day-h.startDay>=h.horizonD)resolve(h,false);
+  }
+  save();
+}
+function resolve(h,early){
+  const p1=price(h.sym,S.day),i1=indexLevel(S.day);
+  const ret=p1/h.entry-1, iret=i1/h.idx0-1;
+  const dirOK= h.dir==='climb'?ret>0.02: h.dir==='fall'?ret<-0.02: Math.abs(ret)<=0.05;
+  const beat= h.dir==='fall'? (iret-ret)>=0.03 : h.dir==='climb'? (ret-iret)>=0.03 : true;
+  h.status='resolved';h.closedDay=S.day;h.early=!!early;h.ret=ret;h.iret=iret;
+  h.verdict= dirOK?'hit':'miss'; h.beat=beat;
+  h.pending=true; // show verdict card when she opens
+}
+function verdictText(h){
+  const c=BY[h.sym],pc=Math.round(h.ret*100),ip=Math.round((h.ret-h.iret)*100);
+  if(h.verdict==='hit'){
+    if(h.dir==='fall')return`She fell ${Math.abs(pc)}% \u2014 you called the slide while the market ${h.iret>=0?'held up':'slipped less'}. A correct bearish call counts double for nerve.`;
+    if(h.beat)return`Up ${pc}% since you called it \u2014 ${ip} points ahead of just owning everything. Your read was right, and it beat the market\u2019s.`;
+    return`Up ${pc}% since you called it \u2014 though the whole market climbed alongside. Right direction; the market made it easy.`;
+  }
+  if(h.dir==='climb')return`She ${pc<0?'fell '+Math.abs(pc)+'%':'went sideways'} \u2014 the story you wrote didn\u2019t show up in the numbers this time. That\u2019s a data point, not a scolding.`;
+  if(h.dir==='fall')return`She ${pc>0?'climbed '+pc+'%':'held steady'} \u2014 the crowd you thought would leave stayed. Worth rereading what you wrote.`;
+  return`She moved ${pc}%, more than \u201csteady\u201d allows \u2014 calm was the one thing she wasn\u2019t.`;
+}
+function showVerdict(h){
+  const c=BY[h.sym];h.pending=false;save();
+  const cls=h.verdict==='hit'?'hit':h.verdict==='wrongwhy'?'wrongwhy':'miss';
+  const word=h.verdict==='hit'?'Called it':h.verdict==='wrongwhy'?'Right, for the wrong reason':'Missed it';
+  $('#verdict').innerHTML=`<div class="grab"></div>
+   <div class="vflare flare ${cls}"></div>
+   <p class="vword">${word}</p>
+   <p class="herwords">\u201c${esc(hunchSentence(h))}\u201d<br><span style="font-size:13px">\u2014 you, ${h.horizonD===63?'a quarter':h.horizonD===126?'six months':'a year'} ago</span></p>
+   <p class="whathap">${verdictText(h)}</p>
+   <div class="btnrow"><button class="btn-ink" id="vok">into the record</button></div>`;
+  showSheet($('#verdict'));
+  haptic(h.verdict==='hit'?[12,80,12,80,20]:20);
+  $('#vok').addEventListener('click',()=>hideSheet($('#verdict')));
+}
+function checkPending(){const h=S.hunches.find(h=>h.pending);if(h)setTimeout(()=>showVerdict(h),900)}
+
+/* ---------- yours ---------- */
+function corpusNow(){
+  if(!S.goal)return 0;
+  let v=S.goal.amount;
+  for(const h of S.hunches){
+    if(h.status==='open'){const raw=price(h.sym,S.day)/h.entry-1;const eff=h.dir==='fall'?-raw:raw;v+=h.amount*eff}
+    else{const eff=h.dir==='fall'?-h.ret:h.ret;v+=h.amount*eff}
+  }
+  return v;
+}
+function statusLine(h){
+  const raw=price(h.sym,S.day)/h.entry-1,pc=Math.round(Math.abs(raw)*100);
+  const dirw=raw>=0?'up':'down';
+  const left=h.horizonD-(S.day-h.startDay);
+  const agree=(h.dir==='climb'&&raw>0)||(h.dir==='fall'&&raw<0)||(h.dir==='steady'&&Math.abs(raw)<0.05);
+  return`${dirw} ${pc}% since you called it${agree?'':' \u2014 against your read so far'} \u00b7 ${left>0?left+' market days to your horizon':'at her horizon'}`;
+}
+function styleNote(){
+  const done=S.hunches.filter(h=>h.status==='resolved');
+  if(done.length<5)return'';
+  const hits=done.filter(h=>h.verdict==='hit');
+  const cheapHits=hits.filter(h=>sig(BY[h.sym]).price==='cheap').length;
+  const runHits=hits.filter(h=>sig(BY[h.sym]).strength==='run').length;
+  let line='';
+  if(cheapHits>=hits.length*0.6&&cheapHits>=2)line='Most of your calls land when you buy good things on bad days. That\u2019s a style, and it has a name \u2014 value.';
+  else if(runHits>=hits.length*0.6&&runHits>=2)line='Most of your calls land when she\u2019s already moving. That\u2019s a style, and it has a name \u2014 momentum.';
+  else if(hits.length)line='Your calls land across very different companies \u2014 your edge so far is patience with your own reasons, not one kind of stock.';
+  return line?`<p class="stylenote">${line}</p>`:'';
+}
+function openYours(){
+  const y=$('#yours');
+  const held=Object.keys(S.holds).filter(s=>S.holds[s]>0&&BY[s]);
+  const P=MODES[S.paint];
+  const hunOpen=S.hunches.filter(h=>h.status==='open');
+  const done=[...S.hunches.filter(h=>h.status==='resolved')].reverse();
+  const hits=done.filter(h=>h.verdict==='hit').length;
+  const goalHTML=S.goal?`<p class="goalsent">${esc(S.goal.name)} \u2014 ${fmtR(corpusNow())} of ${fmtR(S.goal.amount)}, <span class="onpaper">on paper</span></p>`:
+   `<p class="goalsent" style="color:var(--sec)">No goal yet \u2014 it\u2019ll be asked for the first time you size a hunch.</p>`;
+  // constellation positions
+  const cw=Math.min(VW-44,476),ch=230;
+  const stars=held.map((s,i)=>{
+    const r=prng(hashStr('star:'+s));const g=gravity(s);
+    const rad=clamp(14+g*3.2,14,34);
+    const ang=(i/Math.max(held.length,1))*Math.PI*2+r()*0.6, dist=60+r()*70;
+    const x=cw/2+Math.cos(ang)*dist*(cw/300),yv=ch/2+Math.sin(ang)*dist*0.7;
+    const ringed=S.hunches.some(h=>h.sym===s&&h.status==='open');
+    return`<span class="cstar ${ringed?'ringed':''}" style="left:${clamp(x,30,cw-30)}px;top:${clamp(yv,26,ch-30)}px;width:${rad*2}px;height:${rad*2}px;background:${P.color(P.of(BY[s]))};animation-delay:${-r()*8}s"><span class="cn">${esc(BY[s].name)}</span></span>`;
+  }).join('');
+  y.innerHTML=`
+   <button class="closey" aria-label="back to the field"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#221E17" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+   <div class="ysec"><span class="label">your goal</span>${goalHTML}
+     ${S.news?`<p id="shifted">her world shifted \u2014 ${esc(S.news.line)}</p>`:''}</div>
+   <div class="ysec"><span class="label">your constellation</span>
+     ${held.length?`<div id="constellation" style="width:${cw}px">${stars}</div>`:'<p style="color:var(--sec);font-family:var(--serif);font-style:italic">Nothing held yet. Out on the field, press and hold the eye when someone stays with you.</p>'}</div>
+   <div class="ysec"><span class="label">your hunches</span>
+     ${hunOpen.length?hunOpen.map(h=>`<div class="hunchrow"><p class="hsent">\u201c${esc(hunchSentence(h))}\u201d</p>
+       <p class="hstat">${statusLine(h)} \u00b7 ${fmtR(h.amount)} on it</p>
+       <button class="hclose" data-hc="${h.id}">I\u2019ve changed my mind \u2014 close it early</button></div>`).join(''):
+     '<p style="color:var(--sec);font-family:var(--serif);font-style:italic">No hunches in ink yet. Keep wandering \u2014 the field will notice with you.</p>'}</div>
+   <div class="ysec"><span class="label">your verdicts</span>
+     ${done.length?`<p style="font-family:var(--serif);font-size:17px;margin-bottom:6px">${done.length} call${done.length>1?'s':''}, ${hits} landed.</p>`:''}
+     ${done.map(h=>`<div class="flarerow"><span class="flare ${h.verdict==='hit'?'hit':h.verdict==='wrongwhy'?'wrongwhy':'miss'}"></span>
+       <div><p class="fword">${BY[h.sym].name} \u2014 ${h.verdict==='hit'?'called it':h.verdict==='wrongwhy'?'right, for the wrong reason':'missed it'}${h.early?' \u00b7 closed early':''}</p>
+       <p class="fdet">${esc(verdictText(h))}</p></div></div>`).join('')||
+     '<p style="color:var(--sec);font-family:var(--serif);font-style:italic">Verdicts arrive when a hunch meets its horizon \u2014 your own words, quoted back.</p>'}
+     ${styleNote()}</div>
+   <div id="demoday"><button id="adv1">demo \u00b7 advance a market day</button> &nbsp;&nbsp; <button id="adv21">skip a month</button>
+     <p style="font-size:11px;color:var(--muted);margin-top:6px">day ${S.day} \u00b7 prices are a seeded demo walk standing in for the EOD feed</p></div>
+   <p class="ycompline">a learning space \u00b7 paper money, not advice \u00b7 every reading describes data, nothing here is a recommendation</p>`;
+  y.classList.add('on');
+  S.news=null;$('#moonbtn').classList.remove('hasnews');save();
+  y.querySelector('.closey').addEventListener('click',closeYours);
+  $('#adv1').addEventListener('click',()=>advance(1));
+  $('#adv21').addEventListener('click',()=>advance(21));
+  y.querySelectorAll('[data-hc]').forEach(b=>b.addEventListener('click',()=>{
+    const h=S.hunches.find(x=>x.id===b.dataset.hc);if(!h)return;
+    resolve(h,true);save();openYours();setTimeout(()=>showVerdict(h),500);
+  }));
+}
+function closeYours(){$('#yours').classList.remove('on');checkPending()}
+$('#moonbtn').addEventListener('click',openYours);
+function advance(n){
+  S.day+=n;
+  // a held company's world shifting (demo re-encounter)
+  const held=Object.keys(S.holds).filter(s=>S.holds[s]>0&&BY[s]);
+  if(held.length){const s=held[Math.floor(prng(hashStr('news:'+S.day))()*held.length)];
+    const mv=(price(s,S.day)/price(s,Math.max(0,S.day-n))-1)*100;
+    if(Math.abs(mv)>=1)S.news={sym:s,line:`${BY[s].name} moved ${mv>0?'up':'down'} ${Math.abs(mv).toFixed(1)}% while you were away`};
+  }
+  resolveDue();save();openYours();
+  if(S.news)$('#moonbtn').classList.add('hasnews');
+}
+
+/* ---------- first open, whispers ---------- */
+let whT=null;
+function showWhisper(txt,dur){const w=$('#whisper');w.textContent=txt;w.classList.add('on');clearTimeout(whT);whT=setTimeout(()=>w.classList.remove('on'),dur||2800)}
+function coach(k){if(S.seen&&S.coach[k])return;if(S.coach[k])return;S.coach[k]=true;save();
+  const lines={pinch:'lean in \u2014 the small print hides its gems',bloom:'tap anywhere on her card to turn it over',dial:'cross the two dials \u2014 that\u2019s the instrument'};
+  showWhisper(lines[k],3200)}
+let firstDismissed=false;
+function dismissFirst(){
+  if(firstDismissed)return;firstDismissed=true;
+  $('#firstline').classList.add('gone');
+  if(!S.seen){S.seen=true;save()}
+  setTimeout(()=>{const c=$('#compline');if(c)c.style.opacity=0},6000);
+}
+
+/* ---------- boot ---------- */
+function boot(){
+  layout(S.gather);resize();
+  syncDials();
+  // first open: gently toward the consumer neighborhood
+  const target=S.gather==='sector'?(ANCHORS['retail']||ANCHORS['fmcg']):null;
+  if(!S.seen&&target){cam={x:target.x*0.55,y:target.y*0.55,z:fitZ*1.28}}
+  else{cam={x:0,y:0,z:fitZ};$('#firstline').classList.add('gone');firstDismissed=true;
+    const c=$('#compline');if(c)c.style.opacity=0}
+  resolveDue();checkPending();
+  if(S.news)$('#moonbtn').classList.add('hasnews');
+  requestAnimationFrame(t=>{lastT=t;tick(t)});
+}
+boot();
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script>
 </body>
 </html>

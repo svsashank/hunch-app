@@ -1,12 +1,12 @@
 {
-  "name": "Hunch — make the call",
+  "name": "Hunch",
   "short_name": "Hunch",
-  "description": "Stock picking with confidence. Virtual capital, real prices, your thesis.",
+  "description": "The market as a living field. A learning space — paper money, not advice.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#14121B",
-  "theme_color": "#14121B",
+  "background_color": "#FCFAF4",
+  "theme_color": "#FCFAF4",
   "icons": [
-    {"src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%2314121B'/%3E%3Ctext x='96' y='128' font-family='Georgia,serif' font-style='italic' font-size='110' fill='%23D6B172' text-anchor='middle'%3Eh%3C/text%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any"}
+    {"src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='44' fill='%23FCFAF4'/%3E%3Ccircle cx='72' cy='84' r='40' fill='%23F5BBD4' opacity='.85'/%3E%3Ccircle cx='124' cy='110' r='28' fill='%23A8C8E8' opacity='.85'/%3E%3Ccircle cx='104' cy='62' r='17' fill='%23F7E39B' opacity='.9'/%3E%3Ccircle cx='138' cy='68' r='10' fill='%23ABDDBA' opacity='.9'/%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any"}
   ]
 }
